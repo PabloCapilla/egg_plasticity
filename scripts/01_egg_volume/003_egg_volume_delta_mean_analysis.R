@@ -32,6 +32,7 @@ pacman::p_load(dplyr,
                sjPlot, 
                gt,
                ggplot2, 
+               ggExtra,
                extrafont,
                MuMIn, 
                lme4)
@@ -46,6 +47,45 @@ loadfonts()
 ##
 data <- read.csv("./data/egg_volume_dataset.csv") 
 head(data)
+
+##
+##
+##### Within and among mother distribution of male and female helpers #####
+##
+##
+
+# among- and within-mother distributions
+helper_distr <- ggplot(data = data %>% 
+         select(cent_female_helpers, cent_male_helpers, mean_female_helpers, mean_male_helpers) %>% 
+         pivot_longer(cols = 1:4, names_to = "variable", values_to = "helper_value") %>% 
+         separate(col = "variable", into = c("variable", "sex", "remove"), sep = "_") %>% 
+         mutate(variable = recode(variable, cent = "Within mothers", mean = "Among mothers"),
+                sex = recode(sex, female = "Female helpers", male = "Male helpers")),
+       aes(x = helper_value)) +
+  facet_grid(sex~variable, scales = "free") +
+  geom_histogram(aes(y = ..density.., fill = sex),
+                 color = NA, 
+                 alpha = 0.25,) +
+  geom_density(aes(color = sex), 
+               size = 1) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = "none",
+        axis.title = element_text(size = 12, family = "Arial"),
+        axis.text = element_text(size = 10, family = "Arial"),
+        strip.background = element_rect(fill = "white"),
+        strip.text = element_text(size = 12, family = "Arial")) +
+  scale_x_continuous(labels = c(-3:5), breaks = c(-3:5)) +
+  scale_color_manual(values = c("#a50f15", "#4575b4")) +
+  scale_fill_manual(values = c("#a50f15", "#4575b4")) +
+  labs(y = "Density distribition (i.e., normalised histogram)", x = "Number of helpers")
+  
+ggsave(filename = "./plots/Helper distribution - Review plot.png", 
+       plot = helper_distr,
+       device = "png", 
+       units = "mm",
+       width = 125, 
+       height = 125)
 
 
 ##
