@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/03/31
+#' Latest update: 2022/06/07
 #' 
 ###
 ###
@@ -102,11 +102,13 @@ data_mass <- data_mass %>%
   filter(!is.na(egg_weight))
 
 # linear model to calculate whether egg volume predicts egg mass on the day of laying
-m1a_egg_volume_egg_mass <- lm(scale(egg_weight) ~ scale(egg_volume), 
+m1a_egg_volume_egg_mass <- lmer(egg_weight ~ 
+                                egg_volume +
+                                (1|mother_ID), 
                              data = data_mass,
                              na.action = "na.fail")
 summary(m1a_egg_volume_egg_mass)
-dredge(m1a_egg_volume_egg_mass, rank = "AIC", trace = 3)
+dredge(update(m1a_egg_volume_egg_mass, REML=F), rank = "AIC", trace = 3)
 
 ##
 ## within mothers 
@@ -120,15 +122,27 @@ data_mass <- d_centering(data = data_mass,
                             variable = c("egg_volume"))
 head(data_mass)
 
-m1b_egg_volume_egg_mass <- lm(scale(egg_weight) ~ 
-                                scale(cent_egg_volume) +
-                                scale(mean_egg_volume),
+m1b_egg_volume_egg_mass <- lmer(egg_weight ~ 
+                                cent_egg_volume +
+                                mean_egg_volume  +
+                                (1|mother_ID),
                               data = data_mass, 
                               na.action = "na.fail")
 summary(m1b_egg_volume_egg_mass)
-dredge(m1b_egg_volume_egg_mass, rank = "AIC", trace = 3)
+dredge(update(m1b_egg_volume_egg_mass, REML = F), rank = "AIC", trace = 3)
 
 length(unique(data_mass$mother_ID)) # number of mothers in the analysis
+
+##
+## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
+m1c_test_slopes <- lmer(egg_weight ~ 
+                        egg_volume + 
+                        mean_egg_volume+  # this is explicitly testing differences between within and between-mother slopes
+                        (1|mother_ID),       
+                      data = data_mass, 
+                      na.action = "na.fail")
+summary(m1c_test_slopes)
+dredge(update(m1c_test_slopes,REML=F), rank = "AIC", trace = 3)
 
 ##
 ##
@@ -146,11 +160,13 @@ table(is.na(data_weights$hatchling_weight))
 ##
 ## cross-sectional
 ##
-m2a_egg_volume_egg_mass <- lm(scale(hatchling_weight) ~ scale(egg_volume),
+m2a_egg_volume_egg_mass <- lmer(hatchling_weight ~ 
+                                egg_volume +
+                                (1|mother_ID),
          data = data_weights, 
          na.action = "na.fail")
 summary(m2a_egg_volume_egg_mass)
-dredge(m2a_egg_volume_egg_mass, rank = "AIC", trace = 3)
+dredge(update(m2a_egg_volume_egg_mass,REML =F), rank = "AIC", trace = 3)
 
 ##
 ## within mothers 
@@ -164,15 +180,30 @@ data_weights <- d_centering(data = data_weights,
                             variable = c("egg_volume"))
 head(data_weights)
 
-m2b_egg_volume_egg_mass <- lm(scale(hatchling_weight) ~ 
-                                scale(cent_egg_volume) +
-                                scale(mean_egg_volume),
+m2b_egg_volume_egg_mass <- lmer(hatchling_weight ~ 
+                                cent_egg_volume +
+                                mean_egg_volume +
+                                (1|mother_ID),
                               data = data_weights, 
                               na.action = "na.fail")
 summary(m2b_egg_volume_egg_mass)
-dredge(m2b_egg_volume_egg_mass, rank = "AIC", trace = 3)
+dredge(update(m2b_egg_volume_egg_mass, REML = F), rank = "AIC", trace = 3)
 
 length(unique(data_weights$mother_ID)) # number of mothers in the analysis
+
+
+##
+## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
+m2c_test_slopes <- lmer(hatchling_weight ~ 
+                        egg_volume + 
+                        mean_egg_volume +  # this is explicitly testing differences between within and between-mother slopes
+                      (1|mother_ID),
+                      data = data_weights, 
+                      na.action = "na.fail")
+summary(m2c_test_slopes)
+dredge(update(m2c_test_slopes, REML=F), rank = "AIC", trace = 3)
+
+
 
 
 ##

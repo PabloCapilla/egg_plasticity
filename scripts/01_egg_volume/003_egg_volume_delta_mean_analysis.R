@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/04/01
+#' Latest update: 2022/06/03
 #' 
 ###
 ###
@@ -103,9 +103,10 @@ model3_full_partitioning <- lmer(egg_volume ~
                                  REML = FALSE)
 summary(model3_full_partitioning) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
 
+
 # model selection based on AIC
 model3_full_partitioning_aic_table <- dredge(update(model3_full_partitioning, 
-                                                    control = lmerControl( # ignore message for clean trace - the meesage has been checked in model above
+                                                    control = lmerControl( # ignore message for clean trace - the message has been checked in model above
                                                       check.conv.singular = .makeCC(action = "ignore", 
                                                                                     tol = formals(isSingular)$tol)
                                                     )), 
@@ -120,6 +121,11 @@ model3_d6_nested_subset <- subset(model3_full_partitioning_aic_table,
                                   delta < 6 & !nested(.))
 summary(get.models(model3_d6_subset,1)[[1]]) # model output from the top model
 summary(get.models(model3_d6_subset,2)[[1]]) # model output in the best model that contained both female and male helper numbers
+
+# formal test of differences between female helper and male helper effects within-mother from the best model containing both
+model_female_male <- get.models(model3_d6_subset,2)[[1]]
+summary(model_female_male)
+car::linearHypothesis(model_female_male, "cent_female_helpers - cent_male_helpers = 0")
 
 ##
 ## 
@@ -267,6 +273,33 @@ summary(model3_main_effects) # summary of model
 lmerTest::rand(model3_main_effects)# LRT for random effects
 drop1(update(object = model3_main_effects, REML = F), 
       test = "Chisq") # Likelihood-ratio test for each predictor
+
+##
+## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
+model3_test_slopes <- lmer(egg_volume ~ 
+                              poly(rainfall,2)[,1] +
+                              poly(rainfall,2)[,2] +
+                              scale(temp_above_35) +
+                              
+                              # main effects
+                              male_helpers +
+                              mean_male_helpers +   # this is explicitly testing differences between within and between-mother slopes
+                              female_helpers +
+                              mean_female_helpers + # this is explicitly testing differences between within and between-mother slopes
+                              scale(egg_position) +
+                              scale(clutch_size) +
+                              
+                              #random effects
+                              (1|Group) +
+                              (1|mother_ID) +
+                              (1|Season) + 
+                              (1|clutch_ID),
+                            data = data,
+                            na.action = "na.fail",
+                            REML = T)
+drop1(update(object = model3_test_slopes, REML = F), 
+      test = "Chisq") # Likelihood-ratio test for each predictor
+
 
 # table with model coefficients - included as Table S4 in manuscript
 tab_model(model3_main_effects,

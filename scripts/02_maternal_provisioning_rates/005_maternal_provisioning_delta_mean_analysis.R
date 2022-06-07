@@ -33,6 +33,7 @@ pacman::p_load(dplyr,
                ggplot2, 
                extrafont,
                MuMIn, 
+               performance,
                lme4)
 loadfonts()
 # font_import() may be needed first to use font types in ggplot
@@ -70,7 +71,9 @@ model5_full <- lmer (maternal_prov_rate ~
                      na.action = "na.fail",
                      REML = FALSE) 
 summary(model5_full) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
-
+check_model(model5_full)
+check_normality(model5_full)
+check_heteroscedasticity(model5_full)
 
 ##
 ##### Model 6 - partitioning variation in female and male helper number in maternal provisioning rate model - Results in Table S7 #####
@@ -97,6 +100,34 @@ model6_full_partitioning <- lmer (maternal_prov_rate ~
                                   na.action = "na.fail",
                                   REML = FALSE) 
 summary(model6_full_partitioning) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
+
+
+##
+## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
+model6_test_slopes <-  lmer (maternal_prov_rate ~ 
+                               # rainfall and heat waves
+                               poly(rainfall,2)[,1] +
+                               poly(rainfall,2)[,2] +
+                               scale(temp_above_35) +
+                               
+                               # other main effects
+                               male_helpers +
+                               mean_male_helpers +   # this is explicitly testing differences between within and between-mother slopes
+                               female_helpers +
+                               mean_female_helpers + # this is explicitly testing differences between within and between-mother slopes
+                               scale(brood_size) +
+                               (1|group_ID) +
+                               (1|mother_ID) +
+                               (1|season),
+                             data = data,
+                             na.action = "na.fail",
+                             REML = FALSE) 
+summary(model6_test_slopes)
+drop1(update(object = model6_test_slopes, REML = F), 
+      test = "Chisq") # Likelihood-ratio test for each predictor
+
+
+
 
 # model selection based on AIC
 model6_full_aic_table <- dredge(update(model6_full_partitioning, 

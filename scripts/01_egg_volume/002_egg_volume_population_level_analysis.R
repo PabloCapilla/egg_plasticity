@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/03/31
+#' Latest update: 2022/06/07
 #' 
 ###
 ###
@@ -30,6 +30,8 @@ pacman::p_load(dplyr,
                sjPlot, 
                gt,
                ggplot2, 
+               MetBrewer,
+               ggpubr,
                extrafont,
                MuMIn, 
                lme4)
@@ -44,10 +46,11 @@ loadfonts()
 ##
 data <- read.csv("./data/egg_volume_dataset.csv") 
 head(data)
+nrow(data)
 
 ##
 ##
-##### First model - population-level egg volume model - results in Table 1 & Table S1 #####
+##### Summary of sample sizes and replication of mothers #####
 ##
 ##
 
@@ -55,18 +58,90 @@ head(data)
 length(unique(data$clutch_ID)) # 271 clutches
 length(unique(data$mother_ID)) # 62 mothers
 length(unique(data$Group))     # 37 social groups
-range(                         # range of number of clutches per mother
-  {data %>% 
-      group_by(mother_ID, clutch_ID) %>%
-      group_by(mother_ID) %>%
-      summarise(n_clutch_IDes_female = n())}$n_clutch_IDes_female
-)
-median(                        # median number of clutches per female
-  {data %>% 
-      group_by(mother_ID, clutch_ID) %>%
-      group_by(mother_ID) %>%
-      summarise(n_clutch_IDes_female = n())}$n_clutch_IDes_female
-)
+
+# eggs per mother
+egg_per_mother <- data %>% 
+    group_by(mother_ID) %>%
+    summarise(n_eggs_mother = n())
+
+range(egg_per_mother$n_eggs_mother) # range of eggs per mother
+mean(egg_per_mother$n_eggs_mother) # mean of eggs per mother
+median(egg_per_mother$n_eggs_mother) # median of eggs per mother
+
+# clutches per mother
+clutches_per_mother <- data %>% 
+  group_by(mother_ID, clutch_ID) %>%
+  filter(row_number() == 1) %>% 
+  group_by(mother_ID) %>%
+  summarise(n_clutches_mother = n())
+
+range(clutches_per_mother$n_clutches_mother) # range of clutches per mother
+mean(clutches_per_mother$n_clutches_mother) # mean of clutches per mother
+median(clutches_per_mother$n_clutches_mother) # median of clutches per mother
+
+
+## 
+## histogram of clutches per mother
+hist_egg_mother <- ggplot(data = egg_per_mother,
+                          aes(x = n_eggs_mother)) +
+  geom_histogram(fill = "#a50f15", binwidth = 1) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 15),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 12)) +
+  labs(x = "Number of eggs", y = "Count of mothers")
+
+
+# save plot
+ggsave(filename = "./plots/Figure S6a.png", 
+       plot = hist_egg_mother,
+       device = "png", 
+       units = "mm",
+       width = 90, 
+       height = 120)
+  
+##
+##
+##### Distribution of number of female and male helpers #####
+##
+##
+df_helpers_summary <- data %>% 
+  group_by(clutch_ID) %>% 
+  filter(row_number() == 1) %>% 
+  select(clutch_ID, 
+         female_helpers,
+         male_helpers) %>% 
+  pivot_longer(cols = 2:3, names_to = "sex", values_to = "number_ind") %>% 
+  separate(col = "sex", sep = "_", into = c("sex", "useless"))
+
+distr_helpers <- ggplot(data = df_helpers_summary, 
+       aes(x = number_ind, fill = sex)) +
+  geom_bar(position = "dodge") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = "top",
+        axis.title = element_text(size = 15),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 12)) +
+  labs(x = "Number of helpers", y = "Count of clutches") +
+  scale_fill_manual(values = met.brewer("Java", 2),
+                    name = "Helper sex")
+
+# save plot
+ggsave(filename = "./plots/distribution of helpers.png", 
+       plot = distr_helpers,
+       device = "png", 
+       units = "mm",
+       width = 90, 
+       height = 120)
+
+
+##
+##
+##### First model - population-level egg volume model - results in Table 1 & Table S1 #####
+##
+##
 
 # full model - including only biologically and justified predictors
 model1_full <- lmer(egg_volume ~ 
@@ -109,19 +184,21 @@ model1_full_aic_table <- dredge(update(model1_full,
                                        rank = "AIC")
                                 
 # AIC results - Table 1 & Table S1
-model1_d6_subset <- subset(model1_full_aic_table, # for Table S1
-                          delta < 6)
-model1_d6_nested_subset <- subset(model1_full_aic_table, # for Table 1
-                                  delta < 6 & !nested(.))
+model1_d4_subset <- subset(model1_full_aic_table, # for Table S1
+                          delta < 4)
+model1_d6_subset <- subset(model1_full_aic_table, # for Table 1
+                                  delta < 6)
 summary(get.models(model1_d6_subset,1)[[1]]) # model output from the top model
 summary(get.models(model1_d6_subset,2)[[1]]) # model output in the best model that contained both female and male helper numbers
+
+
 
 ##
 ## 
 ## create table with AIC results
-names(model1_d6_nested_subset)
+names(model1_d4_subset)
 number_variables <- 12
-col_names <- names(model1_d6_nested_subset)[1:number_variables]
+col_names <- names(model1_d4_subset)[1:number_variables]
 
 ##
 ##
@@ -132,14 +209,14 @@ col_names <- names(model1_d6_nested_subset)[1:number_variables]
 ## add each model to the table
 # list to store data
 list_models_table1 <- as.list(NA)
-for(m in 1:nrow(model1_d6_nested_subset)){
+for(m in 1:nrow(model1_d4_subset)){
   
   # template to store data
-  table1_template <- data.frame(coefficient = names(model1_d6_nested_subset)[1:number_variables]) 
+  table1_template <- data.frame(coefficient = names(model1_d4_subset)[1:number_variables]) 
   
   # add model coeffiecients
-  model_coef <- data.frame(coefTable(get.models(model1_d6_nested_subset, m)[[1]])) %>% 
-    mutate(coefficient = rownames(coefTable(get.models(model1_d6_nested_subset, m)[[1]]))) %>% 
+  model_coef <- data.frame(coefTable(get.models(model1_d4_subset, m)[[1]])) %>% 
+    mutate(coefficient = rownames(coefTable(get.models(model1_d4_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
   table1_00 <- left_join(x = table1_template, 
@@ -149,9 +226,9 @@ for(m in 1:nrow(model1_d6_nested_subset)){
   ## put table data in right format
   table1_01 <- table1_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
-    mutate(k = model1_d6_nested_subset$df[m],
-           AIC = model1_d6_nested_subset$AIC[m],
-           delta = model1_d6_nested_subset$delta[m]) %>% 
+    mutate(k = model1_d4_subset$df[m],
+           AIC = model1_d4_subset$AIC[m],
+           delta = model1_d4_subset$delta[m]) %>% 
     relocate(`Intercept` = `estimate_(Intercept)`,
              `Intercept SE` = `SE_(Intercept)`,
              `Number of helping females` = `estimate_female_helpers`,
@@ -202,10 +279,17 @@ table1_clean <- table1_data %>%
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping females`, col_uncert =`Number of helping females SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping males`, col_uncert =`Number of helping males SE`) %>% 
+  cols_merge_uncert(col_val = `Clutch size`, col_uncert =`Clutch size SE`) %>%
   cols_merge_uncert(col_val = `Egg position`, col_uncert =`Egg position SE`) %>% 
   cols_merge_uncert(col_val = Rainfall1, col_uncert =`Rainfall1 SE`) %>% 
   cols_merge_uncert(col_val = Rainfall2, col_uncert =`Rainfall2 SE`) %>% 
   cols_merge_uncert(col_val = `Heat waves`, col_uncert =`Heat waves SE`) %>% 
+  cols_merge_uncert(col_val = `Number of helping females x Clutch size`, 
+                    col_uncert =`Number of helping females x Clutch size SE`) %>% 
+  cols_merge_uncert(col_val = `Number of helping females x Egg position`, 
+                    col_uncert =`Number of helping females x Egg position SE`) %>% 
+  cols_merge_uncert(col_val = `Number of helping males x Egg position`, 
+                    col_uncert =`Number of helping males x Egg position SE`) %>% 
   fmt_missing(columns = c(1:(ncol(table1_data)-3), (ncol(table1_data)-1):(ncol(table1_data))), 
               missing_text = " ") %>% 
   cols_label(`Rainfall1` = html("Rainfall<sup>1</sup>"),
@@ -382,6 +466,45 @@ model1_main_effects <- lmer(egg_volume ~
 summary(model1_main_effects) # summary of model
 drop1(update(object = model1_main_effects, REML = F), 
              test = "Chisq") # Likelihood-ratio test for each predictor
+
+##
+## repeatability of egg size
+as.numeric(summary(model1_main_effects)$varcor[[2]]) /      # variance among mothers
+  (as.numeric(summary(model1_main_effects)$varcor[[1]]) +   # variance among clutches
+     as.numeric(summary(model1_main_effects)$varcor[[2]]) + # variance among mothers
+     as.numeric(summary(model1_main_effects)$varcor[[3]]) + # variance among groups
+     as.numeric(summary(model1_main_effects)$varcor[[4]]) + # variance among seasons
+     as.numeric((summary(model1_main_effects)$sigma)^2))    # residual variance
+  
+
+# formal test of differences between female helper and male helper effects within-mother from the best model containing both
+model1_main_effects_brm <- brms::brm(egg_volume ~ 
+                                       rainfall1 +
+                                       rainfall2 +
+                                       scale(temp_above_35) +
+                                       
+                                       # main effects
+                                       female_helpers +
+                                       male_helpers +
+                                       scale(clutch_size) +
+                                       scale(egg_position) +
+                                       
+                                       # random effects
+                                       #(1|Group) + the estimation of this random effect causes convergence problems (sampling stuck ~0) - results with and without are very similar
+                                       (1|mother_ID) +
+                                       (1|Season) + 
+                                       (1|clutch_ID), 
+                                     data = data %>% 
+                                       mutate(rainfall1 = poly(rainfall,2)[,1],
+                                              rainfall2 = poly(rainfall,2)[,2]),
+                                     iter = 10000,
+                                     chains = 2, 
+                                     seed = 7,
+                                     control = list(adapt_delta = 0.95))
+summary(model1_main_effects_brm)
+brms::hypothesis(model1_main_effects_brm, "female_helpers - male_helpers = 0", )
+
+
 
 # table with model coefficients - included as Table S3 in manuscript
 tab_model(model1_main_effects,
