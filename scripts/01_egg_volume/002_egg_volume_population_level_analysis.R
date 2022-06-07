@@ -128,14 +128,6 @@ distr_helpers <- ggplot(data = df_helpers_summary,
   scale_fill_manual(values = met.brewer("Java", 2),
                     name = "Helper sex")
 
-# save plot
-ggsave(filename = "./plots/distribution of helpers.png", 
-       plot = distr_helpers,
-       device = "png", 
-       units = "mm",
-       width = 90, 
-       height = 120)
-
 
 ##
 ##
