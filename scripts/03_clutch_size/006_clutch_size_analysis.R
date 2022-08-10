@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/06/07
+#' Latest update: 2022/08/10
 #' 
 ###
 ###
@@ -27,6 +27,7 @@ rm(list=ls())
 ##
 pacman::p_load(dplyr, 
                tidyr, 
+               data.table,
                sjPlot, 
                gt,
                ggplot2, 
@@ -68,104 +69,152 @@ median(                        # median number of clutches per female
 )
 
 
+## 
+##
+#### Fifth model - zero-truncated model of clutch size - population level #####
+##
+##
+data$mother_ID <- as.factor(data$mother_ID)
+data$Season <- as.factor(data$Season)
+data$Group_ID <- as.factor(data$Group_ID)
+
+# model using glmmADMB package
+model5_pop_level <- glmmADMB::glmmadmb(clutch_size ~ 
+                                         scale(clutch_order) + # improve speed 
+                                         female_helpers +
+                                         male_helpers + 
+                                         (1|mother_ID) + 
+                                         (1|Season) + 
+                                         (1|Group_ID), 
+                                       data=data,
+                                       family="truncpoiss")
+summary(model5_pop_level)
+drop1(model5_pop_level, test = "Chisq")
 
 
 ## 
 ##
-#### First model - population-level clutch size model #####
+#### Fifth model - zero-truncated model of clutch size - partitioning #####
 ##
 ##
-clutch_size_model1 <- lmer(clutch_size ~ 
-                             clutch_order +
-                             female_helpers +
-                             male_helpers + 
-                             (1|mother_ID) + 
-                             (1|Season) + 
-                             (1|Group_ID),
-                           REML = FALSE,
-                           na.action = "na.fail",
-                           data = data)
-summary(clutch_size_model1)
-hist(residuals(clutch_size_model1)) # check distribution of model residuals
+model5_partitioning <- glmmADMB::glmmadmb(clutch_size ~ 
+                                            scale(clutch_order) + # improve speed 
+                                            cent_female_helpers +
+                                            cent_male_helpers + 
+                                            mean_female_helpers +
+                                            mean_male_helpers + 
+                                            (1|mother_ID) + 
+                                            (1|Season) + 
+                                            (1|Group_ID), 
+                                          data=data,
+                                          family="truncpoiss")
+summary(model5_partitioning)
+drop1(model5_partitioning, test = "Chisq")
 
-  
-# model selection based on AIC
-clutch_size_model1_full_aic_table <- dredge(clutch_size_model1, rank = "AIC", trace = 3)
-clutch_size_model1_d6_subset <- subset(clutch_size_model1_full_aic_table, delta < 6) 
+## 
+##
+#### Fifth model - zero-truncated model of clutch size - testing diffs in within and among-mother effects #####
+##
+##
+model5_test_slopes <- glmmADMB::glmmadmb(clutch_size ~ 
+                                           scale(clutch_order) + # improve speed 
+                                           male_helpers +
+                                           mean_male_helpers +   # this is explicitly testing differences between within and between-mother slopes
+                                           female_helpers +
+                                           mean_female_helpers + # this is explicitly testing differences between within and between-mother slopes
+                                           (1|mother_ID) + 
+                                           (1|Season) + 
+                                           (1|Group_ID), 
+                                         data=data,
+                                         family="truncpoiss")
+summary(model5_test_slopes)
+drop1(model5_test_slopes, test = "Chisq")
+
+
+
+## 
+##
+#### Fifth model - zero-truncated model of clutch size - population level - AIC table #####
+##
+##
+
+## AIC calculation
+clutch_size_model5_full_aic_table <- dredge(model5_pop_level, rank = "AIC", trace = 3)
+clutch_size_model5_d6_subset <- subset(clutch_size_model5_full_aic_table, delta < 6) 
 
 
 ##
 ## 
 ## create table with AIC results
-names(model1_d6_subset)
+names(clutch_size_model5_d6_subset)
 number_variables <- 4
-col_names <- names(clutch_size_model1_d6_subset)[1:number_variables]
+col_names <- names(clutch_size_model5_d6_subset)[1:number_variables]
 
 ##
 ##
-##### Code to generate Table S8 #####
+##### Code to generate Table S5 #####
 ##
 ##
 
 ## add each model to the table
 # list to store data
-list_models_table_S8 <- as.list(NA)
-for(m in 1:nrow(clutch_size_model1_d6_subset)){
+list_models_table_S5 <- as.list(NA)
+for(m in 1:nrow(clutch_size_model5_d6_subset)){
   
   # template to store data
-  table_S8_template <- data.frame(coefficient = names(clutch_size_model1_d6_subset)[1:number_variables]) 
+  table_S5_template <- data.frame(coefficient = names(clutch_size_model5_d6_subset)[1:number_variables]) 
   
   # add model coefficients
-  model_coef <- data.frame(coefTable(get.models(clutch_size_model1_d6_subset, m)[[1]])) %>% 
-    mutate(coefficient = rownames(coefTable(get.models(clutch_size_model1_d6_subset, m)[[1]]))) %>% 
+  model_coef <- data.frame(coefTable(get.models(clutch_size_model5_d6_subset, m)[[1]])) %>% 
+    mutate(coefficient = rownames(coefTable(get.models(clutch_size_model5_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  table_S8_00 <- left_join(x = table_S8_template, 
-                         y = model_coef %>% select(-df), 
-                         by = "coefficient")
+  table_S5_00 <- left_join(x = table_S5_template, 
+                           y = model_coef %>% select(-df), 
+                           by = "coefficient")
   
   ## put table data in right format
-  table_S8_01 <- table_S8_00 %>% 
+  table_S5_01 <- table_S5_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
-    mutate(k = clutch_size_model1_d6_subset$df[m],
-           AIC = clutch_size_model1_d6_subset$AIC[m],
-           delta = clutch_size_model1_d6_subset$delta[m]) %>% 
+    mutate(k = clutch_size_model5_d6_subset$df[m],
+           AIC = clutch_size_model5_d6_subset$AIC[m],
+           delta = clutch_size_model5_d6_subset$delta[m]) %>% 
     relocate(`Intercept` = `estimate_(Intercept)`,
              `Intercept SE` = `SE_(Intercept)`,
              `Number of helping females` = `estimate_female_helpers`,
              `Number of helping females SE` = `SE_female_helpers`,
              `Number of helping males` = `estimate_male_helpers`,
              `Number of helping males SE` = `SE_male_helpers`,
-             `Clutch order` = `estimate_clutch_order`,            
-             `Clutch order SE` = `SE_clutch_order`,
+             `Clutch order` = `estimate_scale(clutch_order)`,            
+             `Clutch order SE` = `SE_scale(clutch_order)`,
              k = k, 
              AIC = AIC, 
              delta = delta)
   
   # save data per model
-  list_models_table_S8[[m]] <- table_S8_01           
+  list_models_table_S5[[m]] <- table_S5_01           
   
 }
 
 # combine data from each model in one table
-table_S8_data <- rbindlist(list_models_table_S8)
+table_S5_data <- rbindlist(list_models_table_S5)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-table_S8_data <- table_S8_data %>%
+table_S5_data <- table_S5_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-table_S8_clean <- table_S8_data %>% 
+table_S5_clean <- table_S5_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(table_S8_data)-3), (ncol(table_S8_data)-1):(ncol(table_S8_data))),
+  fmt_number(columns = c(1:(ncol(table_S5_data)-3), (ncol(table_S5_data)-1):(ncol(table_S5_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(table_S8_data)-2,
+  fmt_number(columns = ncol(table_S5_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping females`, col_uncert =`Number of helping females SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping males`, col_uncert =`Number of helping males SE`) %>% 
   cols_merge_uncert(col_val = `Clutch order`, col_uncert =`Clutch order SE`) %>% 
-  fmt_missing(columns = c(1:(ncol(table_S8_data)-3), (ncol(table_S8_data)-1):(ncol(table_S8_data))), 
+  fmt_missing(columns = c(1:(ncol(table_S5_data)-3), (ncol(table_S5_data)-1):(ncol(table_S5_data))), 
               missing_text = " ") %>% 
   cols_label(`delta` = html("&Delta;AIC")) %>% 
   cols_align(align = c("center")) %>% 
@@ -183,73 +232,61 @@ table_S8_clean <- table_S8_data %>%
               column_labels.border.bottom.color = "black")
 
 # TABLE S8
-table_S8_clean
+table_S5_clean
 
 # save Table S8 (saved in html, then imported in docx to include in manuscript)
-table_S8_clean %>%
-  gtsave(filename = "./tables/Table S8.html")
+table_S5_clean %>%
+  gtsave(filename = "./tables/Table S5.html")
 
 
 
 ## 
 ##
-#### Second model - partitioning variation in female and male helper number in clutch size model #####
+#### Fifth model - zero-truncated model of clutch size - partitioning - AIC table #####
 ##
 ##
-clutch_size_model2 <- lmer(clutch_size ~ 
-                             clutch_order +
-                             cent_female_helpers +
-                             cent_male_helpers + 
-                             mean_female_helpers +
-                             mean_male_helpers + 
-                             (1|mother_ID) + 
-                             (1|Season) + 
-                             (1|Group_ID),
-                           REML = FALSE,
-                           na.action = "na.fail",
-                           data = data)
 
-# model selection based on AIC
-clutch_size_model2_full_aic_table <- dredge(clutch_size_model2, rank = "AIC", trace = 3)
-clutch_size_model2_d6_subset <- subset(clutch_size_model2_full_aic_table, delta < 6) 
+## AIC calculation
+clutch_size_model5_part_aic_table <- dredge(model5_partitioning, rank = "AIC", trace = 3)
+clutch_size_model5_part_d6_subset <- subset(clutch_size_model5_part_aic_table, delta < 6) 
 
 
 ##
 ## 
 ## create table with AIC results
-names(model1_d6_subset)
+names(clutch_size_model5_part_d6_subset)
 number_variables <- 6
-col_names <- names(clutch_size_model2_d6_subset)[1:number_variables]
+col_names <- names(clutch_size_model5_part_d6_subset)[1:number_variables]
 
 ##
 ##
-##### Code to generate Table S9 #####
+##### Code to generate Table S6 #####
 ##
 ##
 
 ## add each model to the table
 # list to store data
-list_models_table_S9 <- as.list(NA)
-for(m in 1:nrow(clutch_size_model2_d6_subset)){
+list_models_table_S6 <- as.list(NA)
+for(m in 1:nrow(clutch_size_model5_part_d6_subset)){
   
   # template to store data
-  table_S9_template <- data.frame(coefficient = names(clutch_size_model2_d6_subset)[1:number_variables]) 
+  table_S6_template <- data.frame(coefficient = names(clutch_size_model5_part_d6_subset)[1:number_variables]) 
   
   # add model coefficients
-  model_coef <- data.frame(coefTable(get.models(clutch_size_model2_d6_subset, m)[[1]])) %>% 
-    mutate(coefficient = rownames(coefTable(get.models(clutch_size_model2_d6_subset, m)[[1]]))) %>% 
+  model_coef <- data.frame(coefTable(get.models(clutch_size_model5_part_d6_subset, m)[[1]])) %>% 
+    mutate(coefficient = rownames(coefTable(get.models(clutch_size_model5_part_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  table_S9_00 <- left_join(x = table_S9_template, 
+  table_S6_00 <- left_join(x = table_S6_template, 
                            y = model_coef %>% select(-df), 
                            by = "coefficient")
   
   ## put table data in right format
-  table_S9_01 <- table_S9_00 %>% 
+  table_S6_01 <- table_S6_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
-    mutate(k = clutch_size_model2_d6_subset$df[m],
-           AIC = clutch_size_model2_d6_subset$AIC[m],
-           delta = clutch_size_model2_d6_subset$delta[m]) %>% 
+    mutate(k = clutch_size_model5_part_d6_subset$df[m],
+           AIC = clutch_size_model5_part_d6_subset$AIC[m],
+           delta = clutch_size_model5_part_d6_subset$delta[m]) %>% 
     relocate(`Intercept` = `estimate_(Intercept)`,
              `Intercept SE` = `SE_(Intercept)`,
              `d Number of helping females` = `estimate_cent_female_helpers`,
@@ -260,30 +297,30 @@ for(m in 1:nrow(clutch_size_model2_d6_subset)){
              `d Number of helping males SE` = `SE_cent_male_helpers`,
              `mean Number of helping males` = `estimate_mean_male_helpers`,
              `mean Number of helping males SE` = `SE_mean_male_helpers`,
-             `Clutch order` = `estimate_clutch_order`,            
-             `Clutch order SE` = `SE_clutch_order`,
+             `Clutch order` = `estimate_scale(clutch_order)`,            
+             `Clutch order SE` = `SE_scale(clutch_order)`,
              k = k, 
              AIC = AIC, 
              delta = delta)
   
   # save data per model
-  list_models_table_S9[[m]] <- table_S9_01           
+  list_models_table_S6[[m]] <- table_S6_01           
   
 }
 
 # combine data from each model in one table
-table_S9_data <- rbindlist(list_models_table_S9)
+table_S6_data <- rbindlist(list_models_table_S6)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-table_S9_data <- table_S9_data %>%
+table_S6_data <- table_S6_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-table_S9_clean <- table_S9_data %>% 
+table_S6_clean <- table_S6_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(table_S9_data)-3), (ncol(table_S9_data)-1):(ncol(table_S9_data))),
+  fmt_number(columns = c(1:(ncol(table_S6_data)-3), (ncol(table_S6_data)-1):(ncol(table_S6_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(table_S9_data)-2,
+  fmt_number(columns = ncol(table_S6_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `d Number of helping females`, col_uncert =`d Number of helping females SE`) %>% 
@@ -291,7 +328,7 @@ table_S9_clean <- table_S9_data %>%
   cols_merge_uncert(col_val = `mean Number of helping females`, col_uncert =`mean Number of helping females SE`) %>% 
   cols_merge_uncert(col_val = `mean Number of helping males`, col_uncert =`mean Number of helping males SE`) %>% 
   cols_merge_uncert(col_val = `Clutch order`, col_uncert =`Clutch order SE`) %>% 
-  fmt_missing(columns = c(1:(ncol(table_S9_data)-3), (ncol(table_S9_data)-1):(ncol(table_S9_data))), 
+  fmt_missing(columns = c(1:(ncol(table_S6_data)-3), (ncol(table_S6_data)-1):(ncol(table_S6_data))), 
               missing_text = " ") %>% 
   cols_label(`d Number of helping females` = html("&Delta; Number of helping females"),
              `d Number of helping males` = html("&Delta; Number of helping males"),
@@ -312,34 +349,12 @@ table_S9_clean <- table_S9_data %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black")
 
-# TABLE S9
-table_S9_clean
+# TABLE S8
+table_S6_clean
 
-# save Table S9 (saved in html, then imported in docx to include in manuscript)
-table_S9_clean %>%
-  gtsave(filename = "./tables/Table S9.html")
+# save Table S8 (saved in html, then imported in docx to include in manuscript)
+table_S6_clean %>%
+  gtsave(filename = "./tables/Table S6.html")
 
 
-## 
-##
-#### Third model - zero-trucated model of clutch size #####
-##
-##
-data$mother_ID <- as.factor(data$mother_ID)
-data$Season <- as.factor(data$Season)
-data$Group_ID <- as.factor(data$Group_ID)
 
-# model using glmmADMB package
-truc_model_clutch_size <- glmmADMB::glmmadmb(clutch_size ~ 
-                                               scale(clutch_order) + # improve speed 
-                                               female_helpers +
-                                               male_helpers + 
-                                               (1|mother_ID) + 
-                                               (1|Season) + 
-                                               (1|Group_ID), 
-                                             data=data,
-                                             family="truncpoiss")
-summary(truc_model_clutch_size)
-
-##
-## very similar coefficients to Gaussian models, and also no important effects

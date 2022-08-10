@@ -9,34 +9,36 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 15">
 <meta name=Originator content="Microsoft Word 15">
-<link rel=File-List href="Table%20S3%20-%20completed_archivos/filelist.xml">
+<link rel=File-List
+href="Table%201%20-%20completed%20with%20LRT%20results_archivos/filelist.xml">
 <!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Pablo Capilla Lasheras</o:Author>
   <o:LastAuthor>Pablo Capilla Lasheras</o:LastAuthor>
-  <o:Revision>2</o:Revision>
+  <o:Revision>3</o:Revision>
   <o:TotalTime>9</o:TotalTime>
   <o:Created>2022-03-22T15:01:00Z</o:Created>
-  <o:LastSaved>2022-03-22T15:26:00Z</o:LastSaved>
+  <o:LastSaved>2022-08-09T15:10:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
   <o:Words>72</o:Words>
-  <o:Characters>417</o:Characters>
+  <o:Characters>415</o:Characters>
   <o:Lines>3</o:Lines>
   <o:Paragraphs>1</o:Paragraphs>
-  <o:CharactersWithSpaces>488</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>486</o:CharactersWithSpaces>
   <o:Version>16.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
   <o:AllowPNG/>
  </o:OfficeDocumentSettings>
 </xml><![endif]-->
-<link rel=themeData href="Table%20S3%20-%20completed_archivos/themedata.thmx">
+<link rel=themeData
+href="Table%201%20-%20completed%20with%20LRT%20results_archivos/themedata.thmx">
 <link rel=colorSchemeMapping
-href="Table%20S3%20-%20completed_archivos/colorschememapping.xml">
+href="Table%201%20-%20completed%20with%20LRT%20results_archivos/colorschememapping.xml">
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:View>Print</w:View>
-  <w:Zoom>120</w:Zoom>
+  <w:Zoom>70</w:Zoom>
   <w:SpellingState>Clean</w:SpellingState>
   <w:GrammarState>Clean</w:GrammarState>
   <w:TrackMoves>false</w:TrackMoves>
@@ -53,6 +55,7 @@ href="Table%20S3%20-%20completed_archivos/colorschememapping.xml">
    <w:BreakWrappedTables/>
    <w:SplitPgBreakAndParaMark/>
   </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
   <m:mathPr>
    <m:mathFont m:val="Cambria Math"/>
    <m:brkBin m:val="before"/>
@@ -766,8 +769,8 @@ div.WordSection1
  style='border-collapse:collapse;border:none;mso-border-alt:solid windowtext .5pt;
  mso-yfti-tbllook:1184;mso-table-lspace:9.0pt;margin-left:6.75pt;mso-table-rspace:
  9.0pt;margin-right:6.75pt;mso-table-anchor-vertical:paragraph;mso-table-anchor-horizontal:
- margin;mso-table-left:center;mso-table-top:20.7pt;mso-border-insideh:.5pt solid windowtext;
- mso-border-insidev:.5pt solid windowtext'>
+ margin;mso-table-left:center;mso-table-top:20.7pt;mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+ mso-border-insideh:.5pt solid windowtext;mso-border-insidev:.5pt solid windowtext'>
  <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
   <td style='border-top:solid windowtext 1.0pt;border-left:none;border-bottom:
   solid windowtext 2.25pt;border-right:none;mso-border-top-alt:solid windowtext .5pt;
@@ -1395,8 +1398,9 @@ div.WordSection1
 
 <p class=MsoNormal><b><span style='font-size:10.0pt;font-family:"Arial",sans-serif;
 mso-fareast-font-family:"Times New Roman";color:white;mso-color-alt:windowtext'>Table
-S3</span></b><span style='font-size:10.0pt;font-family:"Arial",sans-serif;
-mso-fareast-font-family:"Times New Roman"'>.<o:p></o:p></span></p>
+</span></b><b><span style='font-size:10.0pt;font-family:"Arial",sans-serif;
+mso-fareast-font-family:"Times New Roman"'>1</span></b><span style='font-size:
+10.0pt;font-family:"Arial",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></p>
 
 </div>
 

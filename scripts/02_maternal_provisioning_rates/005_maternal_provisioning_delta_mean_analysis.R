@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/05/04
+#' Latest update: 2022/08/09
 #' 
 ###
 ###
@@ -51,60 +51,68 @@ head(data)
 
 ##
 ##
-##### Model 5 - partitioning variation in female helper number in top egg volume model in Table 2 #####
-##
-##
-model5_full <- lmer (maternal_prov_rate ~ 
-                       # rainfall and heat waves
-                       poly(rainfall,2)[,1] +
-                       poly(rainfall,2)[,2] +
-                       scale(temp_above_35) +
-                       
-                       # other main effects
-                       cent_female_helpers +
-                       mean_female_helpers +
-                       scale(brood_size) +
-                       (1|group_ID) +
-                       (1|mother_ID) +
-                       (1|season),
-                     data = data,
-                     na.action = "na.fail",
-                     REML = FALSE) 
-summary(model5_full) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
-check_model(model5_full)
-check_normality(model5_full)
-check_heteroscedasticity(model5_full)
-
-##
-##### Model 6 - partitioning variation in female and male helper number in maternal provisioning rate model - Results in Table S7 #####
+##### 1 - Fourth model - partitioning the effects of within and among-mother helper number on maternal provisioning rates #####
 ##
 ##
 
-# full model partition within and among female variation helper number
-model6_full_partitioning <- lmer (maternal_prov_rate ~ 
-                                    # rainfall and heat waves
-                                    poly(rainfall,2)[,1] +
-                                    poly(rainfall,2)[,2] +
-                                    scale(temp_above_35) +
-                                    
-                                    # other main effects
-                                    cent_female_helpers +
-                                    mean_female_helpers +
-                                    cent_male_helpers +
-                                    mean_male_helpers +
-                                    scale(brood_size) +
-                                    (1|group_ID) +
-                                    (1|mother_ID) +
-                                    (1|season),
-                                  data = data,
-                                  na.action = "na.fail",
-                                  REML = FALSE) 
-summary(model6_full_partitioning) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
+# full model partition within and among-mother variation helper number
+model4_main_effects_model <- lmer (maternal_prov_rate ~ 
+                                     # rainfall and heat waves
+                                     poly(rainfall,2)[,1] +
+                                     poly(rainfall,2)[,2] +
+                                     scale(temp_above_35) +
+                                     
+                                     # other main effects
+                                     cent_female_helpers +
+                                     mean_female_helpers +
+                                     cent_male_helpers +
+                                     mean_male_helpers +
+                                     scale(brood_size) +
+                                     (1|group_ID) +
+                                     (1|mother_ID) +
+                                     (1|season),
+                                   data = data,
+                                   na.action = "na.fail",
+                                   REML = FALSE) 
+summary(model4_main_effects_model) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
+lmerTest::rand(model4_main_effects_model)# LRT for random effects
+drop1(update(object = model4_main_effects_model, REML = F), 
+      test = "Chisq") # Likelihood-ratio test for each predictor
 
+# formal test of differences between female helper and male helper effects within-mother from the best model containing both
+car::linearHypothesis(model4_main_effects_model, "cent_female_helpers - cent_male_helpers = 0")
+
+# table with model coefficients
+tab_model(model4_main_effects_model,
+          file="./tables/Table 4 - partition model coefficients maternal provisioning rate.doc",
+          pred.labels = c("Intercept", 
+                          html("Rainfall<sup>1</sup>"),
+                          html("Rainfall<sup>2</sup>"),
+                          "Heat waves",
+                          html("&Delta;Number of female helpers"),
+                          html("&mu;Number of female helpers"),
+                          html("&Delta;Number of male helpers"),
+                          html("&mu;Number of male helpers"),
+                          "Brood size"),
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          show.se = TRUE, 
+          show.stat = FALSE,
+          show.p = FALSE,
+          show.est = TRUE,
+          show.intercept = TRUE,
+          rm.terms = NULL,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          show.r2 = FALSE,
+          show.obs = FALSE,
+          ci.hyphen = ",",
+          use.viewer = T)
+## likelihood-ratio results included in the table above manually
 
 ##
 ## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
-model6_test_slopes <-  lmer (maternal_prov_rate ~ 
+model4_test_slopes <-  lmer (maternal_prov_rate ~ 
                                # rainfall and heat waves
                                poly(rainfall,2)[,1] +
                                poly(rainfall,2)[,2] +
@@ -122,15 +130,20 @@ model6_test_slopes <-  lmer (maternal_prov_rate ~
                              data = data,
                              na.action = "na.fail",
                              REML = FALSE) 
-summary(model6_test_slopes)
-drop1(update(object = model6_test_slopes, REML = F), 
+summary(model4_test_slopes)
+drop1(update(object = model4_test_slopes, REML = F), 
       test = "Chisq") # Likelihood-ratio test for each predictor
 
 
+##
+##
+##### Fourth model - partitioning the effects of within and among-mother helper number on maternal provisioning rates - AIC tables #####
+##
+##
 
 
 # model selection based on AIC
-model6_full_aic_table <- dredge(update(model6_full_partitioning, 
+model4_full_aic_table <- dredge(update(model4_main_effects_model, 
                                        control = lmerControl( # ignore message for clean trace - the message has been checked in model above
                                          check.conv.singular = .makeCC(action = "ignore", 
                                                                        tol = formals(isSingular)$tol)
@@ -140,46 +153,46 @@ model6_full_aic_table <- dredge(update(model6_full_partitioning,
                                 rank = "AIC", 
                                 trace = 3)
 
-# AIC results - Table 2 & Table S5
-model6_d6_subset <- subset(model6_full_aic_table, # for Table S7
+# AIC results
+model4_d6_subset <- subset(model4_full_aic_table, 
                            delta < 6)
 
 ##
 ## 
 ## create table with AIC results
-names(model6_d6_subset)
+names(model4_d6_subset)
 number_variables <- 9
-col_names <- names(model6_d6_subset)[1:number_variables]
+col_names <- names(model4_d6_subset)[1:number_variables]
 
 ##
 ##
-##### Code to generate Table S2 #####
+##### Code to generate Table S4 #####
 ##
 ##
 
 ## add each model to the table
 # list to store data
-list_models_tableS7 <- as.list(NA)
-for(m in 1:nrow(model6_d6_subset)){
+list_models_tableS4 <- as.list(NA)
+for(m in 1:nrow(model4_d6_subset)){
   
   # template to store data
-  tableS7_template <- data.frame(coefficient = names(model6_d6_subset)[1:number_variables]) 
+  tableS4_template <- data.frame(coefficient = names(model4_d6_subset)[1:number_variables]) 
   
   # add model coeffiecients
-  model_coef <- data.frame(coefTable(get.models(model6_d6_subset, m)[[1]])) %>% 
-    mutate(coefficient = rownames(coefTable(get.models(model6_d6_subset, m)[[1]]))) %>% 
+  model_coef <- data.frame(coefTable(get.models(model4_d6_subset, m)[[1]])) %>% 
+    mutate(coefficient = rownames(coefTable(get.models(model4_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  tableS7_00 <- left_join(x = tableS7_template, 
+  tableS4_00 <- left_join(x = tableS4_template, 
                           y = model_coef %>% select(-df), 
                           by = "coefficient")
   
   ## put table data in right format
-  tableS7_01 <- tableS7_00 %>% 
+  tableS4_01 <- tableS4_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
-    mutate(k = model6_d6_subset$df[m],
-           AIC = model6_d6_subset$AIC[m],
-           delta = model6_d6_subset$delta[m]) %>% 
+    mutate(k = model4_d6_subset$df[m],
+           AIC = model4_d6_subset$AIC[m],
+           delta = model4_d6_subset$delta[m]) %>% 
     relocate(`Intercept` = `estimate_(Intercept)`,
              `Intercept SE` = `SE_(Intercept)`,
              `d Number of helping females` = `estimate_cent_female_helpers`,
@@ -203,23 +216,23 @@ for(m in 1:nrow(model6_d6_subset)){
              delta = delta)
   
   # save deta per model
-  list_models_tableS7[[m]] <- tableS7_01           
+  list_models_tableS4[[m]] <- tableS4_01           
   
 }
 
 # combine data from each model in one table
-tableS7_data <- rbindlist(list_models_tableS7)
+tableS4_data <- rbindlist(list_models_tableS4)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-tableS7_data <- tableS7_data %>%
+tableS4_data <- tableS4_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-tableS7_clean <- tableS7_data %>% 
+tableS4_clean <- tableS4_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(tableS7_data)-3), (ncol(tableS7_data)-1):(ncol(tableS7_data))),
+  fmt_number(columns = c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(tableS7_data)-2,
+  fmt_number(columns = ncol(tableS4_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `d Number of helping females`, col_uncert =`d Number of helping females SE`) %>% 
@@ -230,7 +243,7 @@ tableS7_clean <- tableS7_data %>%
   cols_merge_uncert(col_val = Rainfall1, col_uncert =`Rainfall1 SE`) %>% 
   cols_merge_uncert(col_val = Rainfall2, col_uncert =`Rainfall2 SE`) %>% 
   cols_merge_uncert(col_val = `Heat waves`, col_uncert =`Heat waves SE`) %>% 
-  fmt_missing(columns =  c(1:(ncol(tableS7_data)-3), (ncol(tableS7_data)-1):(ncol(tableS7_data))), 
+  fmt_missing(columns =  c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))), 
               missing_text = " ") %>% 
   cols_label(`d Number of helping females` = html("&Delta; Number of helping females"),
              `d Number of helping males` = html("&Delta; Number of helping males"),
@@ -253,26 +266,24 @@ tableS7_clean <- tableS7_data %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black")
 
-# TABLE S7
-tableS7_clean
+# TABLE S4
+tableS4_clean
 
-# save Table 1 (saved in html, then imported in docx to include in manuscript)
-tableS7_clean %>%
-  gtsave(filename = "./tables/Table S7.html")
-
+# save Table S4 
+tableS4_clean %>%
+  gtsave(filename = "./tables/Table S4.html")
 
 
 
 
 ##
 ##
-##### Plotting model predictions from the top performing models above #####
+##### Plotting model predictions #####
 ##
 ##
 
-## 
-## Top model (Table S7)
-model6_best <- lmer (maternal_prov_rate ~ 
+# re-fit model 4 to facilitate plotting
+model4_plot <- lmer (maternal_prov_rate ~ 
                        # rainfall and heat waves
                        rainfall +
                        I(rainfall^2) +
@@ -280,44 +291,48 @@ model6_best <- lmer (maternal_prov_rate ~
                        
                        # other main effects
                        cent_female_helpers +
+                       mean_female_helpers +
+                       cent_male_helpers +
+                       mean_male_helpers +
                        brood_size +
                        (1|group_ID) +
                        (1|mother_ID) +
                        (1|season),
                      data = data,
                      na.action = "na.fail") 
-summary(model6_best)
-
-plot(fitted(model6_best), residuals(model6_best))
-hist( residuals(model6_best))
-shapiro.test(residuals(model6_best))
+summary(model4_plot)
 
 ## data table with values to predict
 df_predict <- expand.grid(brood_size = mean(as.numeric(data$brood_size)),
+                          mean_male_helpers = mean(data$mean_male_helpers),
+                          cent_male_helpers = mean(data$cent_male_helpers),
                           cent_female_helpers = seq(min(data$cent_female_helpers),
                                                     max(data$cent_female_helpers),0.25),
+                          mean_female_helpers = mean(data$mean_female_helpers),
                           rainfall = mean(data$rainfall),
                           temp_above_35 = mean(data$temp_above_35))
 
 ## model predictions
-df_predict$fit <- predict(model6_best, 
+df_predict$fit <- predict(model4_plot, 
                           df_predict, 
                           re.form = NA, 
                           type = "response")
 
 ## calculate SE for predictions
 mm <- model.matrix(~ # rainfall and heat waves
-                     # rainfall and heat waves
                      rainfall +
                      I(rainfall^2) +
                      temp_above_35 +
                      
                      # other main effects
                      cent_female_helpers +
+                     mean_female_helpers +
+                     cent_male_helpers +
+                     mean_male_helpers +
                      brood_size,
                    data = df_predict)
 
-pvar1 <- diag(mm %*% tcrossprod(vcov(model6_best),mm))
+pvar1 <- diag(mm %*% tcrossprod(vcov(model4_plot),mm))
 cmult <- 1 
 df_predict <- data.frame(
   df_predict
@@ -327,7 +342,7 @@ df_predict <- data.frame(
 
 ##
 ## model predictions for different number of female helpers, at the mean value of the other variables in the model
-model6_best_plot <- ggplot(df_predict,
+model4_plot <- ggplot(df_predict,
                            aes(x = cent_female_helpers, 
                                y = fit)) +
   geom_line(size = 1, color = "#a50f15") +
@@ -351,7 +366,7 @@ model6_best_plot <- ggplot(df_predict,
         axis.text = element_text(family = "Arial", size = 10)) 
 
 ggsave(filename = "./plots/Figure 2d.png", 
-       plot = model6_best_plot,
+       plot = model4_plot,
        device = "png", 
        units = "mm",
        width = 73, 

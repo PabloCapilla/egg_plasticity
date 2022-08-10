@@ -15,16 +15,16 @@ href="Table%20S6%20-%20completed%20with%20LRT%20results_archivos/filelist.xml">
  <o:DocumentProperties>
   <o:Author>Pablo Capilla Lasheras</o:Author>
   <o:LastAuthor>Pablo Capilla Lasheras</o:LastAuthor>
-  <o:Revision>3</o:Revision>
-  <o:TotalTime>10</o:TotalTime>
+  <o:Revision>4</o:Revision>
+  <o:TotalTime>11</o:TotalTime>
   <o:Created>2022-05-04T13:11:00Z</o:Created>
-  <o:LastSaved>2022-05-04T13:21:00Z</o:LastSaved>
+  <o:LastSaved>2022-08-09T16:25:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
   <o:Words>55</o:Words>
-  <o:Characters>320</o:Characters>
+  <o:Characters>319</o:Characters>
   <o:Lines>2</o:Lines>
   <o:Paragraphs>1</o:Paragraphs>
-  <o:CharactersWithSpaces>374</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>373</o:CharactersWithSpaces>
   <o:Version>16.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -38,6 +38,7 @@ href="Table%20S6%20-%20completed%20with%20LRT%20results_archivos/colorschememapp
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:View>Print</w:View>
+  <w:Zoom>160</w:Zoom>
   <w:SpellingState>Clean</w:SpellingState>
   <w:GrammarState>Clean</w:GrammarState>
   <w:TrackMoves>false</w:TrackMoves>
@@ -54,6 +55,7 @@ href="Table%20S6%20-%20completed%20with%20LRT%20results_archivos/colorschememapp
    <w:BreakWrappedTables/>
    <w:SplitPgBreakAndParaMark/>
   </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
   <m:mathPr>
    <m:mathFont m:val="Cambria Math"/>
    <m:brkBin m:val="before"/>
@@ -759,7 +761,7 @@ div.WordSection1
 <div align=center>
 
 <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0
- style='border-collapse:collapse;mso-yfti-tbllook:1184'>
+ style='border-collapse:collapse;mso-yfti-tbllook:1184;mso-padding-alt:0cm 5.4pt 0cm 5.4pt'>
  <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
   <td style='border-top:solid windowtext 1.0pt;border-left:none;border-bottom:
   solid windowtext 2.25pt;border-right:none;mso-border-top-alt:solid windowtext .5pt;
@@ -1118,7 +1120,7 @@ div.WordSection1
   mso-border-bottom-alt:solid windowtext .5pt;padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal align=center style='text-align:center'><span
   style='mso-bookmark:_Hlk102566419'><span style='font-size:11.0pt;font-family:
-  "Arial",sans-serif;mso-fareast-font-family:"Times New Roman"'>0.099<o:p></o:p></span></span></p>
+  "Arial",sans-serif;mso-fareast-font-family:"Times New Roman"'>0.10<o:p></o:p></span></span></p>
   </td>
   <span style='mso-bookmark:_Hlk102566419'></span>
   <td width=66 style='width:49.6pt;border:none;border-bottom:solid windowtext 1.0pt;
