@@ -14,17 +14,19 @@ For any further information, please contact: [Pablo Capilla-Lasheras](https://sc
 
 ## Code:
 
-All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts), included in three sub-folder, each for one section of the manuscript. Scripts are numbered in order of use from 001 to 007. Scripts titles should be self-explanatory, but each script contains a description section with further information. The paths provided to import data sets into R assume your location is the main folder of the repository (i.e., the general folder `egg_plasticity`). The R version used for this project was 4.1.3.
+All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts), included in sub-folders, each for one section of the manuscript. Scripts are numbered in order of use. Scripts titles should be self-explanatory, but each script contains a description section with further information. The paths provided to import data sets into R assume your location is the main folder of the repository (i.e., the general folder `egg_plasticity`). The R version used for this project was 4.3.2.
 
 ## Folders:
 
-[`data`](https://github.com/PabloCapilla/egg_plasticity/tree/main/data): data sets for analysis of egg mass, hatchling mass, egg volume, maternal provisioning rates, clutch size and total clutches per season.
+[`data`](https://github.com/PabloCapilla/egg_plasticity/tree/main/data)
 
 [`scripts`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/):
 
--   [`01_egg_volume`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/01_egg_volume): scripts for egg volume analysis.
--   [`02_maternal_provisioning_rates`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/02_maternal_provisioning_rates): scripts for analysis of maternal provisioning rates.
--   [`03_clutch_size`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/03_clutch_size): scripts for analysis of clutch size and total number of clutches per season.
+-   [`00_Functions`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/00_Functions)
+-   [`01_egg_volume`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/01_egg_volume)
+-   [`02_maternal_provisioning_rates`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/02_maternal_provisioning_rates)
+-   [`03_clutch_size`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/03_clutch_size)
+-   [`04_Supplementary_analyses`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/04_Supplementary_analyses)
 
 [`plots`](https://github.com/PabloCapilla/egg_plasticity/tree/main/plots): folder containing all plots included in the manuscript and supplementary materials.
 
