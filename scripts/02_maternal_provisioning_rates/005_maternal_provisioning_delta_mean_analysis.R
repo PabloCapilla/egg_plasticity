@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/08/09
+#' Latest update: 2023/08/02
 #' 
 ###
 ###
@@ -14,13 +14,6 @@
 # Clear memory to make sure there are not files loaded that could cause problems
 rm(list=ls())
 
-##
-##
-##### Script aim: #####
-#' Analysis of maternal provisioning partitioning effects of delta and mean number of helpers.
-#' Results presented in Table 2 and Table S5 - Table S8.
-##
-##
 
 ##
 ##### libraries #####
@@ -47,19 +40,19 @@ loadfonts()
 data <- read.csv("./data/maternal_provisioning_dataset.csv")
 head(data)
 
-
+####
 
 ##
 ##
-##### 1 - Fourth model - partitioning the effects of within and among-mother helper number on maternal provisioning rates #####
+##### partitioning the effects of within and among-mother helper number on maternal provisioning rates #####
 ##
 ##
 
 # full model partition within and among-mother variation helper number
 model4_main_effects_model <- lmer (maternal_prov_rate ~ 
                                      # rainfall and heat waves
-                                     poly(rainfall,2)[,1] +
-                                     poly(rainfall,2)[,2] +
+                                     poly(rainfall,2, raw = F)[,1] +
+                                     poly(rainfall,2,  raw = F)[,2] +
                                      scale(temp_above_35) +
                                      
                                      # other main effects
@@ -75,6 +68,7 @@ model4_main_effects_model <- lmer (maternal_prov_rate ~
                                    na.action = "na.fail",
                                    REML = FALSE) 
 summary(model4_main_effects_model) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
+confint(model4_main_effects_model)
 lmerTest::rand(model4_main_effects_model)# LRT for random effects
 drop1(update(object = model4_main_effects_model, REML = F), 
       test = "Chisq") # Likelihood-ratio test for each predictor
@@ -84,7 +78,7 @@ car::linearHypothesis(model4_main_effects_model, "cent_female_helpers - cent_mal
 
 # table with model coefficients
 tab_model(model4_main_effects_model,
-          file="./tables/Table 4 - partition model coefficients maternal provisioning rate.doc",
+          file="./tables/Table 4 - RAW.doc",
           pred.labels = c("Intercept", 
                           html("Rainfall<sup>1</sup>"),
                           html("Rainfall<sup>2</sup>"),
@@ -109,30 +103,7 @@ tab_model(model4_main_effects_model,
           ci.hyphen = ",",
           use.viewer = T)
 ## likelihood-ratio results included in the table above manually
-
-##
-## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
-model4_test_slopes <-  lmer (maternal_prov_rate ~ 
-                               # rainfall and heat waves
-                               poly(rainfall,2)[,1] +
-                               poly(rainfall,2)[,2] +
-                               scale(temp_above_35) +
-                               
-                               # other main effects
-                               male_helpers +
-                               mean_male_helpers +   # this is explicitly testing differences between within and between-mother slopes
-                               female_helpers +
-                               mean_female_helpers + # this is explicitly testing differences between within and between-mother slopes
-                               scale(brood_size) +
-                               (1|group_ID) +
-                               (1|mother_ID) +
-                               (1|season),
-                             data = data,
-                             na.action = "na.fail",
-                             REML = FALSE) 
-summary(model4_test_slopes)
-drop1(update(object = model4_test_slopes, REML = F), 
-      test = "Chisq") # Likelihood-ratio test for each predictor
+## note that rainfall effects have been back transformed for reporting purposes from the orthogonal scale in which they appear in the table above
 
 
 ##
@@ -165,30 +136,27 @@ number_variables <- 9
 col_names <- names(model4_d6_subset)[1:number_variables]
 
 ##
-##
-##### Code to generate Table S4 #####
-##
-##
+## table
 
 ## add each model to the table
 # list to store data
-list_models_tableS4 <- as.list(NA)
+list_models_tableS11 <- as.list(NA)
 for(m in 1:nrow(model4_d6_subset)){
   
   # template to store data
-  tableS4_template <- data.frame(coefficient = names(model4_d6_subset)[1:number_variables]) 
+  tableS11_template <- data.frame(coefficient = names(model4_d6_subset)[1:number_variables]) 
   
   # add model coeffiecients
   model_coef <- data.frame(coefTable(get.models(model4_d6_subset, m)[[1]])) %>% 
     mutate(coefficient = rownames(coefTable(get.models(model4_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  tableS4_00 <- left_join(x = tableS4_template, 
+  tableS11_00 <- left_join(x = tableS11_template, 
                           y = model_coef %>% select(-df), 
                           by = "coefficient")
   
   ## put table data in right format
-  tableS4_01 <- tableS4_00 %>% 
+  tableS11_01 <- tableS11_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
     mutate(k = model4_d6_subset$df[m],
            AIC = model4_d6_subset$AIC[m],
@@ -205,10 +173,10 @@ for(m in 1:nrow(model4_d6_subset)){
              `mean Number of helping males SE` = `SE_mean_male_helpers`,
              `Brood size` = `estimate_scale(brood_size)`,            # not present in models in Table 1
              `Brood size SE` = `SE_scale(brood_size)`,
-             `Rainfall1` = `estimate_poly(rainfall, 2)[, 1]`,
-             `Rainfall1 SE` = `SE_poly(rainfall, 2)[, 1]`,
-             `Rainfall2` = `estimate_poly(rainfall, 2)[, 2]`,
-             `Rainfall2 SE` = `SE_poly(rainfall, 2)[, 2]`,
+             `Rainfall1` = `estimate_poly(rainfall, 2, raw = F)[, 1]`,
+             `Rainfall1 SE` = `SE_poly(rainfall, 2, raw = F)[, 1]`,
+             `Rainfall2` = `estimate_poly(rainfall, 2, raw = F)[, 2]`,
+             `Rainfall2 SE` = `SE_poly(rainfall, 2, raw = F)[, 2]`,
              `Heat waves` = `estimate_scale(temp_above_35)`,
              `Heat waves SE` = `SE_scale(temp_above_35)`,
              k = k, 
@@ -216,23 +184,23 @@ for(m in 1:nrow(model4_d6_subset)){
              delta = delta)
   
   # save deta per model
-  list_models_tableS4[[m]] <- tableS4_01           
+  list_models_tableS11[[m]] <- tableS11_01           
   
 }
 
 # combine data from each model in one table
-tableS4_data <- rbindlist(list_models_tableS4)
+tableS11_data <- rbindlist(list_models_tableS11)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-tableS4_data <- tableS4_data %>%
+tableS11_data <- tableS11_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-tableS4_clean <- tableS4_data %>% 
+tableS11_clean <- tableS11_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))),
+  fmt_number(columns = c(1:(ncol(tableS11_data)-3), (ncol(tableS11_data)-1):(ncol(tableS11_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(tableS4_data)-2,
+  fmt_number(columns = ncol(tableS11_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `d Number of helping females`, col_uncert =`d Number of helping females SE`) %>% 
@@ -243,7 +211,7 @@ tableS4_clean <- tableS4_data %>%
   cols_merge_uncert(col_val = Rainfall1, col_uncert =`Rainfall1 SE`) %>% 
   cols_merge_uncert(col_val = Rainfall2, col_uncert =`Rainfall2 SE`) %>% 
   cols_merge_uncert(col_val = `Heat waves`, col_uncert =`Heat waves SE`) %>% 
-  fmt_missing(columns =  c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))), 
+  fmt_missing(columns =  c(1:(ncol(tableS11_data)-3), (ncol(tableS11_data)-1):(ncol(tableS11_data))), 
               missing_text = " ") %>% 
   cols_label(`d Number of helping females` = html("&Delta; Number of helping females"),
              `d Number of helping males` = html("&Delta; Number of helping males"),
@@ -266,14 +234,11 @@ tableS4_clean <- tableS4_data %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black")
 
-# TABLE S4
-tableS4_clean
+tableS11_clean
+tableS11_clean %>%
+  gtsave(filename = "./tables/Table S11.html")
 
-# save Table S4 
-tableS4_clean %>%
-  gtsave(filename = "./tables/Table S4.html")
-
-
+#####
 
 
 ##

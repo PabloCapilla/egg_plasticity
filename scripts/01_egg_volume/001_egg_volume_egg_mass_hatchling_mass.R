@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/08/09
+#' Latest update: 2023/08/02
 #' 
 ###
 ###
@@ -14,30 +14,29 @@
 # Clear memory to make sure there are not files loaded that could cause problems
 rm(list=ls())
 
-##
-##
-##### Script aim: #####
-#' Introductory analysis of egg volume: within and among mother variation in egg volume and 
-#' correlations between egg volume, egg mass and hatchling weight. Results presented in Results section 1 and Figure 1
-#' 
-##
-##
 
 ##
 ##### libraries #####
 ##
 pacman::p_load(dplyr, 
-               WeaverTools,
                tidyr, 
-               ggplot2,
-               ggpubr,
+               data.table,
                lubridate,
+               sjPlot, 
+               gt,
+               ggplot2, 
+               ggExtra,
+               ggpubr,
                extrafont,
                MuMIn, 
                lme4)
 loadfonts()
+source('./scripts/00_Functions/FUNCTION_d_centering.R')
+
 # font_import() may be needed first to use font types in ggplot
 # check with 'fonts()' that font are available
+
+#####
 
 ##
 ##
@@ -46,6 +45,8 @@ loadfonts()
 ##
 data <- read.csv("./data/egg_volume_dataset.csv") 
 head(data)
+
+#####
 
 ##
 ##
@@ -78,8 +79,19 @@ range(
       summarise(n_clutch_IDes_female = n())}$n_clutch_IDes_female
 )
 
+
 ## groups
 length(unique(data$Group))
+
+## mean, min, max egg volume per mother
+data %>% 
+  group_by(mother_ID) %>% 
+  summarise(mean_per_mother = mean(egg_volume/1000)) %>% 
+  summarise(mean_egg_vol = mean(mean_per_mother),
+            min_egg_vol = min(mean_per_mother),
+            max_egg_vol = max(mean_per_mother))
+
+#####
 
 ##
 ##
@@ -87,23 +99,31 @@ length(unique(data$Group))
 ##
 ##
 
+##
+## DATA 
+
 # calculate egg age to do the analysis using eggs weighed the first day after laying
 data$egg_age <- dmy(data$egg_weight_date) - dmy(data$laid_date)
 
 # data for this first analysis
 data_mass <- data %>% 
+  mutate(egg_volume_cm = egg_volume/1000) %>% 
   filter(laid_date_error == 0) %>% # keep eggs for which lay date was accurately known
   filter(egg_age == 0)             # keep eggs that were measured the same say they were laid
 
 # remove NA values from egg volume and egg mass columns
 table(is.na(data_mass$egg_volume))
 table(is.na(data_mass$egg_weight))
+
 data_mass <- data_mass %>% 
   filter(!is.na(egg_weight))
 
+##
+## MODEL
+
 # linear model to calculate whether egg volume predicts egg mass on the day of laying
 m1a_egg_volume_egg_mass <- lmer(egg_weight ~ 
-                                egg_volume +
+                                  egg_volume_cm +
                                 (1|mother_ID), 
                              data = data_mass,
                              na.action = "na.fail")
@@ -111,98 +131,149 @@ summary(m1a_egg_volume_egg_mass)
 drop1(m1a_egg_volume_egg_mass, test = "Chisq") # LR Test of egg volume effects on egg weight
 
 ##
-## within mothers 
-##
+## TABLE OF RESULTS
+#
+## Supplementary table
 
-# partitioning egg volume in its within and among mother components
-# (d_centering in WeaverTools R package available on GitHub)
-data_mass <- d_centering(data = data_mass, 
-                            centering_by = "mother_ID", 
-                            cluster = "Group",
-                            variable = c("egg_volume"))
-head(data_mass)
+# table with model coefficients
+tab_model(m1a_egg_volume_egg_mass,
+          file="./tables/Table S3.doc",
+          pred.labels = c("Intercept", 
+                          html("Egg volume (cm3)")),
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          digits = 3,
+          digits.p = 3,
+          show.se = TRUE, 
+          show.stat = FALSE,
+          show.p = FALSE,
+          show.est = TRUE,
+          show.intercept = TRUE,
+          rm.terms = NULL,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          show.r2 = FALSE,
+          show.obs = FALSE,
+          ci.hyphen = ",",
+          use.viewer = T)
 
-m1b_egg_volume_egg_mass <- lmer(egg_weight ~ 
-                                cent_egg_volume +
-                                mean_egg_volume  +
-                                (1|mother_ID),
-                              data = data_mass, 
-                              na.action = "na.fail")
-summary(m1b_egg_volume_egg_mass)
-drop1(m1b_egg_volume_egg_mass, test = "Chisq") # LR Test of within-mother egg volume effect on egg weight
-
-length(unique(data_mass$mother_ID)) # number of mothers in the analysis
-
-##
-## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
-m1c_test_slopes <- lmer(egg_weight ~ 
-                        egg_volume + 
-                        mean_egg_volume+  # this is explicitly testing differences between within and between-mother slopes
-                        (1|mother_ID),       
-                      data = data_mass, 
-                      na.action = "na.fail")
-summary(m1c_test_slopes)
-drop1(m1c_test_slopes, test = "Chisq") # LR Test of differences between within and among-mother slopes
-
+#####
 
 ##
 ##
 ##### 2 - Does egg volume predict hatchling mass? #####
 ##
 ##
+
+##
+## DATA
 data_weights <- read.csv("./data/egg_volume_hatchling_mass_dataset.csv")
 data_weights$X <- NULL
 head(data_weights)
+data_weights <- data_weights %>% 
+  mutate(egg_volume_cm = egg_volume/1000) 
 
 # sample size no NAs
 table(is.na(data_weights$egg_volume))
 table(is.na(data_weights$hatchling_weight))
 
 ##
+## MODEL
+
+##
 ## cross-sectional
 ##
 m2a_egg_volume_hatch_weight <- lmer(hatchling_weight ~ 
-                                egg_volume +
-                                (1|mother_ID),
-         data = data_weights, 
-         na.action = "na.fail")
+                                      egg_volume_cm +
+                                      (1|mother_ID),
+                                    data = data_weights, 
+                                    na.action = "na.fail")
 summary(m2a_egg_volume_hatch_weight)
 drop1(m2a_egg_volume_hatch_weight, test = "Chisq") # LR Test of egg volume effects on hatchling weight
+
+##
+## TABLE
+
+##
+## TABLE OF RESULTS
+
+# Supplementary table
+
+# table with model coefficients
+tab_model(m2a_egg_volume_hatch_weight,
+          file="./tables/Table S2.doc",
+          pred.labels = c("Intercept", 
+                          html("Egg volume (cm3)")),
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          digits = 3,
+          digits.p = 3,
+          show.se = TRUE, 
+          show.stat = FALSE,
+          show.p = FALSE,
+          show.est = TRUE,
+          show.intercept = TRUE,
+          rm.terms = NULL,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          show.r2 = FALSE,
+          show.obs = FALSE,
+          ci.hyphen = ",",
+          use.viewer = T)
 
 ##
 ## within mothers 
 ##
 
-# partitioning egg volume in its within and among mother components
-# (d_centering in WeaverTools R package available on GitHub)
+# partitioning egg volume in its within and among mother components (function in '00_FUNCTIONS')
+data_weights <- data_weights %>% 
+  mutate(egg_volume_cm = egg_volume/1000)
+length(unique(data_weights$mother_ID)) # number of mothers in the analysis
+
 data_weights <- d_centering(data = data_weights, 
                             centering_by = "mother_ID", 
                             cluster = "group_ID",
-                            variable = c("egg_volume"))
+                            variable = c("egg_volume_cm"))
 head(data_weights)
 
 m2b_egg_volume_hatch_weight <- lmer(hatchling_weight ~ 
-                                      cent_egg_volume +
-                                      mean_egg_volume +
+                                      cent_egg_volume_cm +
+                                      mean_egg_volume_cm +
                                       (1|mother_ID),
                                     data = data_weights, 
                                     na.action = "na.fail")
 summary(m2b_egg_volume_hatch_weight)
 drop1(m2b_egg_volume_hatch_weight, test = "Chisq") # LR Test of within-mother egg volume effect on hatchling weight
 
-length(unique(data_weights$mother_ID)) # number of mothers in the analysis
 
 
 ##
-## Test of differences in slopes between and within mothers (applying Equation 3 in van de Pol & Wright 2009)
-m2c_test_slopes <- lmer(hatchling_weight ~ 
-                        egg_volume + 
-                        mean_egg_volume +  # this is explicitly testing differences between within and between-mother slopes
-                      (1|mother_ID),
-                      data = data_weights, 
-                      na.action = "na.fail")
-summary(m2c_test_slopes)
-drop1(m2c_test_slopes, test = "Chisq")
+## Supplementary table
+
+# table with model coefficients
+tab_model(m2b_egg_volume_hatch_weight,
+          file="./tables/Table S3.doc",
+          pred.labels = c("Intercept", 
+                          html("&Delta;Egg volume"),
+                          html("&mu;Egg volume")),
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          digits = 3,
+          digits.p = 3,
+          show.se = TRUE, 
+          show.stat = FALSE,
+          show.p = FALSE,
+          show.est = TRUE,
+          show.intercept = TRUE,
+          rm.terms = NULL,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          show.r2 = FALSE,
+          show.obs = FALSE,
+          ci.hyphen = ",",
+          use.viewer = T)
+
+#####
 
 ##
 ##
@@ -296,3 +367,4 @@ ggsave(filename = "./plots/Figure 1.png",
        width = 180, 
        height = 95)
 
+#####

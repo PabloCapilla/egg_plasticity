@@ -6,7 +6,7 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/08/09
+#' Latest update: 2023/08/02
 #' 
 ###
 ###
@@ -14,13 +14,6 @@
 # Clear memory to make sure there are not files loaded that could cause problems
 rm(list=ls())
 
-##
-##
-##### Script aim: #####
-#' Analysis of maternal provisioning. 
-#' 
-##
-##
 
 ##
 ##### libraries #####
@@ -38,6 +31,8 @@ loadfonts()
 # font_import() may be needed first to use font types in ggplot
 # check with 'fonts()' that font are available
 
+##### 
+
 ##
 ##
 ##### Maternal provisioning rate dataset #####
@@ -45,6 +40,12 @@ loadfonts()
 ##
 data <- read.csv("./data/maternal_provisioning_dataset.csv")
 head(data)
+table(data$season)
+
+##
+## correlations between helpers and rainfall
+cor.test(data$female_helpers, data$rainfall)
+cor.test(data$male_helpers, data$rainfall)
 
 
 # sample size in this model
@@ -93,7 +94,7 @@ ggsave(filename = "./plots/Figure S6b.png",
 
 ##
 ##
-##### 1 - Third model - population-level maternal provisioning rates #####
+##### population-level maternal provisioning rates #####
 ##
 ##
 
@@ -120,6 +121,7 @@ model3_full_model <- lmer (maternal_prov_rate ~
                            na.action = "na.fail",
                            REML = FALSE) # boundary (singular) warning due to group_ID variance = 0. Removing this random effect removes the warning and produces the same estimates
 summary(model3_full_model) # summary of model
+drop1(model3_full_model, test = "Chisq")
 
 # check normality
 plot(residuals(model3_full_model))
@@ -141,8 +143,8 @@ anova(model3_full_model,
 ## full model - without interactions
 model3_main_effects_model <- lmer (maternal_prov_rate ~ 
                                      # rainfall and heat waves
-                                     poly(rainfall,2)[,1] +
-                                     poly(rainfall,2)[,2] +
+                                     poly(rainfall,2, raw = F)[,1] +
+                                     poly(rainfall,2, raw = F)[,2] +
                                      scale(temp_above_35) +
                                      
                                      # other main effects
@@ -159,6 +161,8 @@ summary(model3_main_effects_model) # summary of model
 drop1(update(object = model3_main_effects_model, REML = F), 
       test = "Chisq") # Likelihood-ratio test for each predictor
 
+confint(model3_main_effects_model)
+
 # formal test of differences between female helper and male helper effects within-mother from the best model containing both
 car::linearHypothesis(model3_main_effects_model, "female_helpers - male_helpers = 0")
 
@@ -167,7 +171,7 @@ car::linearHypothesis(model3_main_effects_model, "female_helpers - male_helpers 
 
 # table with model coefficients 
 tab_model(model3_main_effects_model,
-          file="./tables/Table 3 - model coefficients maternal provisioning rate.doc",
+          file="./tables/Table 3 - RAW.doc",
           pred.labels = c("Intercept", 
                           "Rainfall^1", 
                           "Rainfall^2",
@@ -190,11 +194,13 @@ tab_model(model3_main_effects_model,
           ci.hyphen = ",",
           use.viewer = T)
 ## likelihood-ratio results included in the table above manually
+## note that rainfall effects have been back transformed for reporting purposes from the orthogonal scale in which they appear in the table above
 
+#####
 
 ##
 ##
-##### 2 - Third model - population-level maternal provisioning rates - AIC tables #####
+##### population-level maternal provisioning rates - AIC tables #####
 ##
 ##
 
@@ -228,23 +234,23 @@ col_names <- names(model3_full_aic_table)[1:number_variables]
 
 ## add each model to the table
 # list to store data
-list_models_tableS3 <- as.list(NA)
+list_models_tableS10 <- as.list(NA)
 for(m in 1:nrow(model3_d6_subset)){
   
   # template to store data
-  tableS3_template <- data.frame(coefficient = names(model3_d6_subset)[1:number_variables]) 
+  tableS10_template <- data.frame(coefficient = names(model3_d6_subset)[1:number_variables]) 
   
   # add model coeffiecients
   model_coef <- data.frame(coefTable(get.models(model3_d6_subset, m)[[1]])) %>% 
     mutate(coefficient = rownames(coefTable(get.models(model3_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  tableS3_00 <- left_join(x = tableS3_template, 
+  tableS10_00 <- left_join(x = tableS10_template, 
                          y = model_coef %>% select(-df), 
                          by = "coefficient")
   
   ## put table data in right format
-  tableS3_01 <- tableS3_00 %>% 
+  tableS10_01 <- tableS10_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
     mutate(k = model3_d6_subset$df[m],
            AIC = model3_d6_subset$AIC[m],
@@ -272,23 +278,23 @@ for(m in 1:nrow(model3_d6_subset)){
              delta = delta)
   
   # save deta per model
-  list_models_tableS3[[m]] <- tableS3_01           
+  list_models_tableS10[[m]] <- tableS10_01           
   
 }
 
 # combine data from each model in one table
-tableS3_data <- rbindlist(list_models_tableS3)
+tableS10_data <- rbindlist(list_models_tableS10)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-tableS3_data <- tableS3_data %>%
+tableS10_data <- tableS10_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-tableS3_clean <- tableS3_data %>% 
+tableS10_clean <- tableS10_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(tableS3_data)-3), (ncol(tableS3_data)-1):(ncol(tableS3_data))),
+  fmt_number(columns = c(1:(ncol(tableS10_data)-3), (ncol(tableS10_data)-1):(ncol(tableS10_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(tableS3_data)-2,
+  fmt_number(columns = ncol(tableS10_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping females`, col_uncert =`Number of helping females SE`) %>% 
@@ -301,7 +307,7 @@ tableS3_clean <- tableS3_data %>%
                     col_uncert =`Number of helping females x Brood size SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping males x Brood size`, 
                     col_uncert =`Number of helping males x Brood size SE`) %>% 
-  fmt_missing(columns = c(1:(ncol(tableS3_data)-3), (ncol(tableS3_data)-1):(ncol(tableS3_data))), 
+  fmt_missing(columns = c(1:(ncol(tableS10_data)-3), (ncol(tableS10_data)-1):(ncol(tableS10_data))), 
               missing_text = " ") %>% 
   cols_label(`Rainfall1` = html("Rainfall<sup>1</sup>"),
              `Rainfall2` = html("Rainfall<sup>2</sup>"),
@@ -321,20 +327,18 @@ tableS3_clean <- tableS3_data %>%
               column_labels.border.bottom.color = "black")
 
 # TABLE 2
-tableS3_clean
-
-# save Table 2 (saved in html, then imported in docx to include in manuscript)
-tableS3_clean %>%
-  gtsave(filename = "./tables/Table S3.html")
+tableS10_clean
+tableS10_clean %>%
+  gtsave(filename = "./tables/Table S10.html")
 
 
 ## remove table1 objects
-rm(list = c("tableS3_00", 
-            "tableS3_01", 
-            "tableS3_clean", 
-            "list_models_tableS3", 
-            "tableS3_template", 
-            "tableS3_data"))
+rm(list = c("tableS10_00", 
+            "tableS10_01", 
+            "tableS10_clean", 
+            "list_models_tableS10", 
+            "tableS10_template", 
+            "tableS10_data"))
 
 
 ##

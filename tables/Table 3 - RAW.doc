@@ -1,0 +1,56 @@
+<table style="border-collapse:collapse; border:none;">
+<tr>
+<th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">&nbsp;</th>
+<th colspan="3" style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm; ">maternal prov rate</th>
+</tr>
+<tr>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  text-align:left; ">Predictors</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">Estimates</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">SE</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">CI (95%)</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Intercept</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">7.46</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.54</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">6.40,8.52</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Rainfall^1</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">4.55</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">3.02</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">&#45;1.44,10.53</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Rainfall^2</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">7.67</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">2.75</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">2.23,13.11</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Heat waves</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.70</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.30</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.10,1.30</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Number of female helpers</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">&#45;0.46</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.19</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">&#45;0.84,-0.07</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Number of male helpers</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">&#45;0.07</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.23</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">&#45;0.52,0.38</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">Brood size</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">1.44</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.24</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">0.96,1.92</td>
+</tr>
+
+</table>
+

@@ -6,21 +6,13 @@
 #' Capilla-Lasheras et al. 
 #' Preprint: https://doi.org/10.1101/2021.11.11.468195
 #' 
-#' Latest update: 2022/08/09
+#' Latest update: 2023/08/02
 #' 
 ###
 ###
 
 # Clear memory to make sure there are not files loaded that could cause problems
 rm(list=ls())
-
-##
-##
-##### Script aim: #####
-#' Analysis of egg volume. Results presented in Table 1, Table S1 and Table S3
-#' 
-##
-##
 
 ##
 ##### libraries #####
@@ -45,8 +37,22 @@ loadfonts()
 ##
 ##
 data <- read.csv("./data/egg_volume_dataset.csv") 
+data <- data %>% 
+  mutate(egg_volume_cm = egg_volume/1000)
 head(data)
 nrow(data)
+
+
+##
+## correlations between helpers and rainfall
+cor.test(data$female_helpers, data$rainfall)
+cor.test(data$male_helpers, data$rainfall)
+
+cor.test(data$female_helpers, data$temp_above_35)
+cor.test(data$male_helpers, data$temp_above_35)
+
+
+#####
 
 ##
 ##
@@ -68,6 +74,9 @@ range(egg_per_mother$n_eggs_mother) # range of eggs per mother
 mean(egg_per_mother$n_eggs_mother) # mean of eggs per mother
 median(egg_per_mother$n_eggs_mother) # median of eggs per mother
 
+max(data$egg_volume_cm) # largest egg
+min(data$egg_volume_cm) # smallest egg
+
 # clutches per mother
 clutches_per_mother <- data %>% 
   group_by(mother_ID, clutch_ID) %>%
@@ -78,7 +87,6 @@ clutches_per_mother <- data %>%
 range(clutches_per_mother$n_clutches_mother) # range of clutches per mother
 mean(clutches_per_mother$n_clutches_mother) # mean of clutches per mother
 median(clutches_per_mother$n_clutches_mother) # median of clutches per mother
-
 
 ## 
 ## histogram of clutches per mother
@@ -92,7 +100,6 @@ hist_egg_mother <- ggplot(data = egg_per_mother,
         axis.text.x = element_text(size = 12)) +
   labs(x = "Number of eggs", y = "Count of mothers")
 
-
 # save plot
 ggsave(filename = "./plots/Figure S6a.png", 
        plot = hist_egg_mother,
@@ -102,10 +109,7 @@ ggsave(filename = "./plots/Figure S6a.png",
        height = 120)
   
 ##
-##
-##### Distribution of number of female and male helpers #####
-##
-##
+## Distribution of number of female and male helpers 
 df_helpers_summary <- data %>% 
   group_by(clutch_ID) %>% 
   filter(row_number() == 1) %>% 
@@ -128,6 +132,8 @@ distr_helpers <- ggplot(data = df_helpers_summary,
   scale_fill_manual(values = met.brewer("Java", 2),
                     name = "Helper sex")
 
+#####
+
 ##
 ##
 ##### 1 - First model - population-level egg volume model #####
@@ -136,33 +142,40 @@ distr_helpers <- ggplot(data = df_helpers_summary,
 
 ##
 ## full model - with interactions - including only biologically and justified predictors
-model1_full_model <- lmer(egg_volume ~ 
-                              # rainfall and heat waves
-                              poly(rainfall,2)[,1] +
-                              poly(rainfall,2)[,2] +
-                              scale(temp_above_35) +
-                              
-                              # interactions
-                              female_helpers : scale(clutch_size) +
-                              male_helpers : scale(clutch_size) +
-                              female_helpers : scale(egg_position) +
-                              male_helpers : scale(egg_position) +
-                              
-                              # other main effects
-                              female_helpers +
-                              male_helpers +
-                              scale(clutch_size) +
-                              scale(egg_position) +
-                              
-                              # random effects
-                              (1|Group) +
-                              (1|mother_ID) +
-                              (1|Season) + 
-                              (1|clutch_ID),
-                            data = data,
-                            na.action = "na.fail",
-                            REML = T)
+model1_full_model <- lmer(egg_volume_cm ~ 
+                            # rainfall and heat waves
+                            poly(rainfall,2)[,1] +
+                            poly(rainfall,2)[,2] +
+                            scale(temp_above_35) +
+                            
+                            # interactions
+                            female_helpers : scale(clutch_size) +
+                            male_helpers : scale(clutch_size) +
+                            female_helpers : scale(egg_position) +
+                            male_helpers : scale(egg_position) +
+                            
+                            # other main effects
+                            female_helpers +
+                            male_helpers +
+                            scale(clutch_size) +
+                            scale(egg_position) +
+                            
+                            # random effects
+                            (1|Group) +
+                            (1|clutch_ID) +
+                            (1|mother_ID) +
+                            (1|Season), 
+                          data = data,
+                          na.action = "na.fail",
+                          REML = F)
+drop1(model1_full_model, test = "Chisq")
 summary(model1_full_model) # summary of model
+lmerTest::ranova(model1_full_model)
+
+##
+## maternal repeatability of egg size  wihtout among brood variation
+var_comp <- data.frame(VarCorr(model1_full_model))
+var_comp$vcov[var_comp$grp == 'mother_ID'] / sum(var_comp$vcov)
 
 # check normality
 plot(residuals(model1_full_model))
@@ -170,8 +183,9 @@ hist(residuals(model1_full_model), freq=F) # model residuals
 lines(density(x = rnorm(n = 10000,          # expected normal distribution
                         mean = 0, 
                         sd = sd(residuals(model1_full_model)))))
+
 ##
-## LRT to assess importance of interactions
+## LRT to assess importance of interactions (interactions not significant: Chisq = 1.38m df = 4, p = 0.847)
 anova(model1_full_model, 
       update(model1_full_model, . ~ . -
                female_helpers : scale(clutch_size) -
@@ -182,44 +196,36 @@ anova(model1_full_model,
 
 ##
 ## full model - without interactions
-model1_main_effects_model <- lmer(egg_volume ~ 
-                            # rainfall and heat waves
-                            poly(rainfall,2)[,1] +
-                            poly(rainfall,2)[,2] +
-                            scale(temp_above_35) +
-
-                            # other main effects
-                            female_helpers +
-                            male_helpers +
-                            scale(clutch_size) +
-                            scale(egg_position) +
-                            
-                            # random effects
-                            (1|Group) +
-                            (1|mother_ID) +
-                            (1|Season) + 
-                            (1|clutch_ID),
-                          data = data,
-                          na.action = "na.fail",
-                          REML = F)
+model1_main_effects_model <- lmer(egg_volume_cm ~ 
+                                    # rainfall and heat waves
+                                    poly(rainfall,2, raw = F)[,1] +
+                                    poly(rainfall,2, raw = F)[,2] +
+                                    scale(temp_above_35) +
+                                    
+                                    # other main effects
+                                    female_helpers +
+                                    male_helpers +
+                                    scale(clutch_size) +
+                                    scale(egg_position) +
+                                    
+                                    # random effects
+                                    (1|Group) +
+                                    (1|mother_ID) +
+                                    (1|Season) + 
+                                    (1|clutch_ID),
+                                  data = data,
+                                  na.action = "na.fail",
+                                  REML = F)
 summary(model1_main_effects_model) # summary of model
-drop1(update(object = model1_main_effects_model, REML = F), 
+drop1(update(object = model1_main_effects_model), 
       test = "Chisq") # Likelihood-ratio test for each predictor
 
 ##
-## repeatability of egg size
-as.numeric(summary(model1_full_model)$varcor[[2]]) /      # variance among mothers
-  (as.numeric(summary(model1_full_model)$varcor[[1]]) +   # variance among clutches
-     as.numeric(summary(model1_full_model)$varcor[[2]]) + # variance among mothers
-     as.numeric(summary(model1_full_model)$varcor[[3]]) + # variance among groups
-     as.numeric(summary(model1_full_model)$varcor[[4]]) + # variance among seasons
-     as.numeric((summary(model1_full_model)$sigma)^2))    # residual variance
-
-# table with model coefficients - included as Table S3 in manuscript
+## TABLE
 tab_model(model1_main_effects_model,
-          file="./tables/Table 1 - model coefficients egg volume - RAW.doc",
+          file="./tables/Table 1 - RAW.doc",
           pred.labels = c("Intercept", 
-                          "Rainfall^1", 
+                          'Rainfall^1', 
                           "Rainfall^2",
                           "Heat waves",
                           "Number of female helpers",
@@ -228,6 +234,8 @@ tab_model(model1_main_effects_model,
                           "Egg position"),
           string.ci = "CI (95%)",
           string.se = "SE",
+          digits = 3, 
+          digits.p = 3,
           show.se = TRUE, 
           show.stat = FALSE,
           show.p = FALSE,
@@ -241,49 +249,21 @@ tab_model(model1_main_effects_model,
           ci.hyphen = ",",
           use.viewer = T)
 ## likelihood-ratio results included in the table above manually
-
+## note that rainfall effects have been back transformed for reporting purposes from the orthogonal scale in which they appear in the table above
 
 # formal test of differences between female helper and male helper effects
 car::linearHypothesis(model1_main_effects_model, "female_helpers - male_helpers = 0")
 
+#####
 
 ##
 ##
-##### 2 - First model - population-level egg volume model - AIC tables #####
+##### AIC tables #####
 ##
 ##
-
-# full model 
-model1_full <- lmer(egg_volume ~ 
-                      # rainfall and heat waves
-                      poly(rainfall,2)[,1] +
-                      poly(rainfall,2)[,2] +
-                      scale(temp_above_35) +
-                      
-                      # interactions
-                      female_helpers : scale(clutch_size) +
-                      male_helpers : scale(clutch_size) +
-                      female_helpers : scale(egg_position) +
-                      male_helpers : scale(egg_position) +
-                      
-                      # other main effects
-                      female_helpers +
-                      male_helpers +
-                      scale(clutch_size) +
-                      scale(egg_position) +
-                      
-                      # random effects
-                      (1|Group) +
-                      (1|mother_ID) +
-                      (1|Season) + 
-                      (1|clutch_ID),
-                    data = data,
-                    na.action = "na.fail",
-                    REML = F)
-summary(model1_full) # boundary (singular) warning due to group and season variances = 0. Removing these two random effects removes the warning and produces the same estimates
 
 # model selection based on AIC
-model1_full_aic_table <- dredge(update(model1_full, 
+model1_full_aic_table <- dredge(update(model1_full_model, 
                                        control = lmerControl( # ignore message for clean trace - the message has been checked in model above
                                          check.conv.singular = .makeCC(action = "ignore", 
                                                                        tol = formals(isSingular)$tol)
@@ -305,31 +285,27 @@ names(model1_d6_subset)
 number_variables <- 12
 col_names <- names(model1_d6_subset)[1:number_variables]
 
-##
-##
-##### Code to generate Table 1 #####
-##
-##
+## Table S4 
 
 ## add each model to the table
 # list to store data
-list_models_tableS1 <- as.list(NA)
+list_models_tableS4 <- as.list(NA)
 for(m in 1:nrow(model1_d6_subset)){
   
   # template to store data
-  tableS1_template <- data.frame(coefficient = names(model1_d6_subset)[1:number_variables]) 
+  tableS4_template <- data.frame(coefficient = names(model1_d6_subset)[1:number_variables]) 
   
   # add model coeffiecients
   model_coef <- data.frame(coefTable(get.models(model1_d6_subset, m)[[1]])) %>% 
     mutate(coefficient = rownames(coefTable(get.models(model1_d6_subset, m)[[1]]))) %>% 
     rename(estimate = Estimate, 
            SE = Std..Error)
-  tableS1_00 <- left_join(x = tableS1_template, 
+  tableS4_00 <- left_join(x = tableS4_template, 
                          y = model_coef %>% select(-df), 
                          by = "coefficient")
   
   ## put table data in right format
-  tableS1_01 <- tableS1_00 %>% 
+  tableS4_01 <- tableS4_00 %>% 
     pivot_wider(names_from = coefficient, values_from = c(estimate, SE)) %>% 
     mutate(k = model1_d6_subset$df[m],
            AIC = model1_d6_subset$AIC[m],
@@ -363,23 +339,23 @@ for(m in 1:nrow(model1_d6_subset)){
              delta = delta)
   
   # save data per model
-  list_models_tableS1[[m]] <- tableS1_01           
+  list_models_tableS4[[m]] <- tableS4_01           
   
 }
 
 # combine data from each model in one table
-tableS1_data <- rbindlist(list_models_tableS1)
+tableS4_data <- rbindlist(list_models_tableS4)
 
 # remove columns with all NA (remove variables that don't appear in any model in the table)
-tableS1_data <- tableS1_data %>%
+tableS4_data <- tableS4_data %>%
   select_if(~ !all(is.na(.)))
 
 # form table
-tableS1_clean <- tableS1_data %>% 
+tableS4_clean <- tableS4_data %>% 
   gt() %>% 
-  fmt_number(columns = c(1:(ncol(tableS1_data)-3), (ncol(tableS1_data)-1):(ncol(tableS1_data))),
+  fmt_number(columns = c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))),
              decimals = 2) %>% 
-  fmt_number(columns = ncol(tableS1_data)-2,
+  fmt_number(columns = ncol(tableS4_data)-2,
              decimals = 0) %>% 
   cols_merge_uncert(col_val = `Intercept`, col_uncert = `Intercept SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping females`, col_uncert =`Number of helping females SE`) %>% 
@@ -397,7 +373,7 @@ tableS1_clean <- tableS1_data %>%
                     col_uncert =`Number of helping females x Egg position SE`) %>% 
   cols_merge_uncert(col_val = `Number of helping males x Egg position`, 
                     col_uncert =`Number of helping males x Egg position SE`) %>% 
-  fmt_missing(columns = c(1:(ncol(tableS1_data)-3), (ncol(tableS1_data)-1):(ncol(tableS1_data))), 
+  fmt_missing(columns = c(1:(ncol(tableS4_data)-3), (ncol(tableS4_data)-1):(ncol(tableS4_data))), 
               missing_text = " ") %>% 
   cols_label(`Rainfall1` = html("Rainfall<sup>1</sup>"),
              `Rainfall2` = html("Rainfall<sup>2</sup>"),
@@ -417,11 +393,11 @@ tableS1_clean <- tableS1_data %>%
               column_labels.border.bottom.color = "black")
 
 # TABLE 1
-tableS1_clean
+tableS4_clean
 
 # save Table 1 (saved in html, then imported in docx to include in manuscript)
-tableS1_clean %>%
-  gtsave(filename = "./tables/Table S1.html")
+tableS4_clean %>%
+  gtsave(filename = "./tables/Table S4.html")
 
 
 ## remove table1 objects
@@ -430,7 +406,9 @@ rm(list = c("table1_00",
             "table1_clean", 
             "list_models_table1", 
             "table1_template", 
-            "tableS1_data"))
+            "tableS4_data"))
+
+#####
 
 ##
 ##
