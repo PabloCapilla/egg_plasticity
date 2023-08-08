@@ -22,8 +22,10 @@ pacman::p_load(dplyr,
                tidyr, 
                data.table,
                ggplot2, 
+               sjPlot,
                extrafont,
                MCMCglmm,
+               brms,
                lme4)
 loadfonts()
 # font_import() may be needed first to use font types in ggplot
@@ -54,7 +56,7 @@ egg <- egg %>%
 head(egg)
 nrow(egg)
 
-####
+#####
 
 ##
 ##
@@ -119,100 +121,158 @@ nrow(data[is.na(data$egg_volume_cm),])
 
 ##
 ##
-##### bivariate model #####
+##### data formatting #####
 ##
 ##
 
-## priors
-prior_egg_frate_bivariate <- list(R=list(V=matrix(c(1,0,0,0.001), nrow = 2), nu=1.002, fix = 2),
-                                  G=list(G1=list(V=diag(2), nu=1.002),
-                                         G2=list(V=diag(2), nu=1.002),
-                                         G3=list(V=diag(2), nu=1.002),
-                                         G4=list(V=diag(2), nu=1.002))) 
+# variable format management
+data$resp1_sub <- ifelse(is.na(data$egg_volume_cm), 0, 1)
+table(data$resp1_sub)
+data$resp2_sub <- ifelse(is.na(data$maternal_prov_rate), 0, 1)
+table(data$resp2_sub)
+
+# standarised quadratic rainfall effects 
+data$rainfall_egg1[!is.na(data$rainfall_egg)] <- poly(data$rainfall_egg[!is.na(data$rainfall_egg)],2)[,1]
+data$rainfall_egg2[!is.na(data$rainfall_egg)] <- poly(data$rainfall_egg[!is.na(data$rainfall_egg)],2)[,2]
+data$rainfall_frate1[!is.na(data$rainfall_frate)] <- poly(data$rainfall_frate[!is.na(data$rainfall_frate)],2)[,1]
+data$rainfall_frate2[!is.na(data$rainfall_frate)] <- poly(data$rainfall_frate[!is.na(data$rainfall_frate)],2)[,2]
+
+#####
 
 ##
-## model no helpers
-set.seed(7)
-egg_frate_bivariate_nohelpers <- MCMCglmm(cbind(egg_volume_cm, maternal_prov_rate) ~ 
-                                            trait - 1 +
-                                            
-                                            ## egg model
-                                            at.level(trait, 1):I(rainfall_egg^2) +
-                                            at.level(trait, 1):rainfall_egg,
-                                            at.level(trait, 1):egg_position + 
-                                            at.level(trait, 1):clutch_size +
-                                            at.level(trait, 1):temp_above_35_egg +
-                                            #at.level(trait, 1):female_helpers_egg +
-                                            #at.level(trait, 1):male_helpers_egg +
-                                            
-                                            ## prov model
-                                            at.level(trait, 2):I(rainfall_frate^2) +
-                                            at.level(trait, 2):rainfall_frate +
-                                            at.level(trait, 2):temp_above_35_frate +
-                                            #at.level(trait, 2):female_helpers_frate +
-                                            #at.level(trait, 1):male_helpers_frate +
-                                            at.level(trait, 2):brood_size,
-                                          
-                                          random = 
-                                            ~idh(trait):Group +  
-                                            idh(trait):Season +
-                                            us(trait):mother_ID + 
-                                            us(trait):clutch_ID,
-                                          rcov =~ idh(trait):units,
-                                          family = c("gaussian","gaussian"),
-                                          prior = prior_egg_frate_bivariate,
-                                          nitt=5100,
-                                          burnin=100,
-                                          thin=1,
-                                          verbose = TRUE,
-                                          data = data)
+##
+##### bivariate model no helpers #####
+##
+##
+bf_egg <- bf(scale(egg_volume_cm)|subset(resp1_sub) ~ 
+               rainfall_egg2 +
+               rainfall_egg1 +
+               scale(temp_above_35_egg) + 
+               scale(egg_position) + 
+               scale(clutch_size) +
+               (1|a|Group) +
+               (1|b|Season) +
+               (1|c|mother_ID) + 
+               (1|d|clutch_ID), 
+             decomp = "QR")
 
-saveRDS(object = egg_frate_bivariate_nohelpers, 
-        file = "./models/bivariate_egg_volume_feeding_rate_no_helpers.RDS")
+bf_prov <- bf(scale(maternal_prov_rate)|subset(resp2_sub) ~ 
+                rainfall_frate2 +
+                rainfall_frate1 +
+                scale(temp_above_35_frate) + 
+                scale(brood_size) +
+                (1|z|Group) +
+                (1|x|Season) +
+                (1|c|mother_ID) + 
+                (1|d|clutch_ID),
+              decomp = "QR")
 
-summary(egg_frate_bivariate_nohelpers)
-plot(egg_frate_bivariate_nohelpers)
+model_prior <- prior(constant(0.01),class = "sigma",resp = "scalematernalprovrate") +
+  prior(normal(0,100), class = "b", resp = "scalematernalprovrate") +
+  prior(normal(0,100), class = "b", resp = "scaleeggvolumecm")
+
+bivar_no_helpers <- brm(bf_egg + bf_prov + set_rescor(F), 
+                        data = data, 
+                        chains = 4, 
+                        cores = 4, 
+                        iter = 50000, 
+                        warmup = 25000, 
+                        thin = 10,
+                        seed = 7,
+                        prior = model_prior,
+                        normalize = FALSE,
+                        backend = 'cmdstanr')
+##
+## save model results
+#saveRDS(object = bivar_no_helpers, file = './models/SupplementsI_egg_volume_prov_rate_brms_no_helpers.RDS')
+bivar_no_helpers <- readRDS(file = './models/SupplementsI_egg_volume_prov_rate_brms_no_helpers.RDS')
+
+## results
+summary(bivar_no_helpers)
+plot(bivar_no_helpers)
+varcor <- VarCorr(bivar_no_helpers)
+(varcor$clutch_ID$cov)
+
+
+
+tab_model(bivar_no_helpers, 
+          show.ci50 = TRUE, 
+          show.se = TRUE, 
+          show.re.var = TRUE,
+          file="./tables/Table S25.doc",
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          digits = 3,
+          use.viewer = T)
+#####
 
 ##
-## model with helpers
-set.seed(7)
-egg_frate_bivariate_helpers <- MCMCglmm(cbind(scale(egg_volume_cm), scale(maternal_prov_rate)) ~ 
-                                          trait - 1 +
-                                          
-                                          ## egg model
-                                          at.level(trait, 1):poly(rainfall_egg,2)[,1] +
-                                          at.level(trait, 1):poly(rainfall_egg,2)[,2] +
-                                          at.level(trait, 1):egg_position + 
-                                          at.level(trait, 1):clutch_size +
-                                          at.level(trait, 1):temp_above_35_egg +
-                                          at.level(trait, 1):female_helpers_egg +
-                                          at.level(trait, 1):male_helpers_egg +
-                                          
-                                          ## prov model
-                                          at.level(trait, 2):poly(rainfall_frate,2)[,1] +
-                                          at.level(trait, 2):poly(rainfall_frate,2)[,2] +
-                                          at.level(trait, 2):temp_above_35_frate +
-                                          at.level(trait, 2):female_helpers_frate +
-                                          at.level(trait, 2):male_helpers_frate +
-                                          at.level(trait, 2):brood_size,
-                                        
-                                        random = 
-                                          ~idh(trait):Group +  
-                                          idh(trait):Season +
-                                          us(trait):mother_ID + 
-                                          us(trait):clutch_ID,
-                                        rcov =~ idh(trait):units,
-                                        family = c("gaussian","gaussian"),
-                                        prior = prior_egg_frate_bivariate,
-                                        nitt=510000,
-                                        burnin=10000,
-                                        thin=100,
-                                        verbose = TRUE,
-                                        data = data_model)
-saveRDS(object = egg_frate_bivariate_helpers, 
-        file = "./models/bivariate_egg_volume_feeding_rate_with_helpers.RDS")
-summary(egg_frate_bivariate_helpers)
-plot(egg_frate_bivariate_helpers)
+##
+##### bivariate model with helpers #####
+##
+##
+bf_egg_helpers <- bf(scale(egg_volume_cm)|subset(resp1_sub) ~ 
+                       rainfall_egg2 +
+                       rainfall_egg1 +
+                       scale(temp_above_35_egg) + 
+                       scale(egg_position) + 
+                       scale(clutch_size) +
+                       male_helpers_egg +
+                       female_helpers_egg +
+                       (1|a|Group) +
+                       (1|b|Season) +
+                       (1|c|mother_ID) + 
+                       (1|d|clutch_ID), 
+                     decomp = "QR")
 
+bf_prov_helpers <- bf(scale(maternal_prov_rate)|subset(resp2_sub) ~ 
+                        rainfall_frate2 +
+                        rainfall_frate1 +
+                        scale(temp_above_35_frate) + 
+                        scale(brood_size) +
+                        male_helpers_frate +
+                        female_helpers_frate +
+                        (1|z|Group) +
+                        (1|x|Season) +
+                        (1|c|mother_ID) + 
+                        (1|d|clutch_ID),
+                      decomp = "QR")
 
+model_prior <- prior(constant(0.01),class = "sigma",resp = "scalematernalprovrate") +
+  prior(normal(0,100), class = "b", resp = "scalematernalprovrate") +
+  prior(normal(0,100), class = "b", resp = "scaleeggvolumecm")
 
+bivar_with_helpers <- brm(bf_egg_helpers + bf_prov_helpers + set_rescor(F), 
+                          data = data, 
+                          chains = 4, 
+                          cores = 4, 
+                          iter = 50000, 
+                          warmup = 25000, 
+                          thin = 10,
+                          seed = 7,
+                          prior = model_prior,
+                          normalize = FALSE,
+                          backend = 'cmdstanr')
+##
+## save model results
+#saveRDS(object = bivar_with_helpers, file = './models/SupplementsI_egg_volume_prov_rate_brms_with_helpers.RDS')
+bivar_with_helpers <- readRDS(file = './models/SupplementsI_egg_volume_prov_rate_brms_with_helpers.RDS')
+
+## results
+summary(bivar_with_helpers)
+plot(bivar_with_helpers)
+varcor <- VarCorr(bivar_with_helpers)
+(varcor$clutch_ID$cov)
+
+tab_model(bivar_with_helpers, 
+          show.ci50 = TRUE, 
+          show.se = TRUE, 
+          show.re.var = TRUE,
+          file="./tables/Table S24.doc",
+          string.ci = "CI (95%)",
+          string.se = "SE",
+          digits = 3,
+          use.viewer = T)
+#####
+
+s
