@@ -44,7 +44,7 @@ data <- read.csv("./data/total_clutches_per_year.csv")
 
 data %>% 
   group_by(season) %>% 
-  summarise(sd_rainfall = sd(rainfall)) # no variatio in rainfall within breeding seasons
+  summarise(sd_rainfall = sd(rainfall)) # no variation in rainfall within breeding seasons
 
 #####
 

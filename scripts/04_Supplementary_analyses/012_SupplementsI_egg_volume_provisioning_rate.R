@@ -131,6 +131,18 @@ table(data$resp1_sub)
 data$resp2_sub <- ifelse(is.na(data$maternal_prov_rate), 0, 1)
 table(data$resp2_sub)
 
+unique(data$clutch_ID[data$resp2_sub==1])
+
+# clutches with data for both variables
+df_summary <- data %>% 
+  group_by(clutch_ID) %>% 
+  filter(row_number() == 1)
+
+table(df_summary$resp1_sub, df_summary$resp2_sub)
+
+#different clutches 
+nrow(df_summary)
+
 # standarised quadratic rainfall effects 
 data$rainfall_egg1[!is.na(data$rainfall_egg)] <- poly(data$rainfall_egg[!is.na(data$rainfall_egg)],2)[,1]
 data$rainfall_egg2[!is.na(data$rainfall_egg)] <- poly(data$rainfall_egg[!is.na(data$rainfall_egg)],2)[,2]
@@ -192,7 +204,6 @@ summary(bivar_no_helpers)
 plot(bivar_no_helpers)
 varcor <- VarCorr(bivar_no_helpers)
 (varcor$clutch_ID$cov)
-
 
 
 tab_model(bivar_no_helpers, 
@@ -262,8 +273,10 @@ bivar_with_helpers <- readRDS(file = './models/SupplementsI_egg_volume_prov_rate
 summary(bivar_with_helpers)
 plot(bivar_with_helpers)
 varcor <- VarCorr(bivar_with_helpers)
-(varcor$clutch_ID$cov)
 
+(varcor$mother_ID$cov)
+
+# save table of fixed effects
 tab_model(bivar_with_helpers, 
           show.ci50 = TRUE, 
           show.se = TRUE, 

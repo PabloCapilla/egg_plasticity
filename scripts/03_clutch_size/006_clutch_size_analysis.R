@@ -18,10 +18,10 @@ rm(list=ls())
 ##### libraries #####
 ##
 
-#install.packages("glmmADMB", 
-#                 repos=c("http://glmmadmb.r-forge.r-project.org/repos",
-#                         getOption("repos")),
-#                 type="source")
+install.packages("glmmADMB", 
+                 repos=c("http://glmmadmb.r-forge.r-project.org/repos",
+                         getOption("repos")),
+                 type="source")
 
 pacman::p_load(dplyr, 
                tidyr, 

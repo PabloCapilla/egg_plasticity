@@ -8,13 +8,17 @@ Pablo Capilla-Lasheras, Alastair J. Wilson, Andrew J. Young. **Mothers front-loa
 
 ------------------------------------------------------------------------
 
-For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla\@gmail.com](mailto:pacapilla@gmail.com)
+For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla@gmail.com](mailto:pacapilla@gmail.com) and [Andy Young](https://scholar.google.co.uk/citations?user=2_9VTfkAAAAJ&hl=en), email: [A.J.Young@exeter.ac.uk](mailto:A.J.Young@exeter.ac.uk)
 
 ------------------------------------------------------------------------
 
+## Notes
+
+Please, get in touch if you are interested in re-using any data contained in this repository. We would be very happy to help achieve your goals. See details of the licence of this repository in [`LICENSE`](https://github.com/PabloCapilla/egg_plasticity/blob/main/LICENSE).
+
 ## Code:
 
-All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts), included in sub-folders, each for one section of the manuscript. Scripts are numbered in order of use. Scripts titles should be self-explanatory, but each script contains a description section with further information. The paths provided to import data sets into R assume your location is the main folder of the repository (i.e., the general folder `egg_plasticity`). The R version used for this project was 4.3.2.
+All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts), included in sub-folders, each for one section of the manuscript. Scripts are numbered in order of use. The paths provided to import data sets into R assume your location is the main folder of the repository (i.e., the general folder `egg_plasticity`). Please, use the R package [`renv`](https://rstudio.github.io/renv/articles/renv.html) to retrieve the r package library used to run these scripts.
 
 ## Folders:
 
@@ -28,10 +32,11 @@ All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plast
 -   [`03_clutch_size`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/03_clutch_size)
 -   [`04_Supplementary_analyses`](https://github.com/PabloCapilla/egg_plasticity/tree/main/scripts/04_Supplementary_analyses)
 
-[`plots`](https://github.com/PabloCapilla/egg_plasticity/tree/main/plots): folder containing all plots included in the manuscript and supplementary materials.
+[`plots`](https://github.com/PabloCapilla/egg_plasticity/tree/main/plots): folder containing plots included in the manuscript and supplementary materials.
 
-[`tables`](https://github.com/PabloCapilla/egg_plasticity/tree/main/tables): folder containing all tables included in the manuscript and supplementary materials, mostly in html. Create in R using the [gt package](https://gt.rstudio.com/).
+[`tables`](https://github.com/PabloCapilla/egg_plasticity/tree/main/tables): folder containing tables included in the manuscript and supplementary materials, mostly in html. Mostly created in R using the [gt package](https://gt.rstudio.com/).
 
-## Notes
+[`models`](https://github.com/PabloCapilla/egg_plasticity/tree/main/models): folder containing brms models for Supplementary Section I.
 
-See details of the licence of this repository in [`LICENSE`](https://github.com/PabloCapilla/meta-analysis_variation_urban/blob/main/LICENSE).
+[`renv`](https://github.com/PabloCapilla/egg_plasticity/tree/main/renv): R library/environment used to run this repository. More information in [`renv`](https://rstudio.github.io/renv/articles/renv.html).
+
