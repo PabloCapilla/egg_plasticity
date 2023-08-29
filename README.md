@@ -8,7 +8,7 @@ Pablo Capilla-Lasheras, Alastair J. Wilson, Andrew J. Young. **Mothers front-loa
 
 ------------------------------------------------------------------------
 
-For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla@gmail.com](mailto:pacapilla@gmail.com) and [Andy Young](https://scholar.google.co.uk/citations?user=2_9VTfkAAAAJ&hl=en), email: [A.J.Young@exeter.ac.uk](mailto:A.J.Young@exeter.ac.uk)
+For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla@gmail.com](mailto:pacapilla@gmail.com) and [Andy Young](http://www.animalsocieties.org/), email: [A.J.Young@exeter.ac.uk](mailto:A.J.Young@exeter.ac.uk)
 
 ------------------------------------------------------------------------
 
