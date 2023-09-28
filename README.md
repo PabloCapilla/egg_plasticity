@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/675776047.svg)](https://zenodo.org/badge/latestdoi/675776047)
+
 # Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care
 
 This repository contains materials presented in the manuscript below.
