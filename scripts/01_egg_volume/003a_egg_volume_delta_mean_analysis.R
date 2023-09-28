@@ -2,11 +2,8 @@
 ###
 #' 
 #' Script for:
-#' Mothers front-load their investment to the egg stage when helped in a wild cooperative bird
+#' Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care
 #' Capilla-Lasheras et al. 
-#' Preprint: https://doi.org/10.1101/2021.11.11.468195
-#' 
-#' Latest update: 2023/08/02
 #' 
 ###
 ###
@@ -160,7 +157,7 @@ tab_model(model2_main_effects_model,
 
 ##
 ##
-##### 2 - - partitioning variation in female and male helper number effects on egg volume model - AIC tables #####
+##### 2 - partitioning variation in female and male helper number effects on egg volume model - AIC tables #####
 ##
 ##
 
@@ -188,7 +185,7 @@ col_names <- names(model2_d6_subset)[1:number_variables]
 
 ##
 ##
-##### Code to generate Table S2 #####
+##### Code to generate Table #####
 ##
 ##
 
@@ -291,10 +288,10 @@ tableS5_clean <- tableS5_data %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black")
 
-# TABLE S2
+# TABLE
 tableS5_clean
 
-# save Table S1 (saved in html, then imported in docx to include in manuscript)
+# save Table (saved in html, then imported in docx to include in manuscript)
 tableS5_clean %>%
   gtsave(filename = "./tables/Table S5.html")
 

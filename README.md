@@ -1,14 +1,14 @@
-# Mothers front-load their investment to the egg stage when helped in a wild cooperative bird
+# Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care
 
 This repository contains materials presented in the manuscript below.
 
 ------------------------------------------------------------------------
 
-Pablo Capilla-Lasheras, Alastair J. Wilson, Andrew J. Young. **Mothers front-load their investment to the egg stage when helped in a wild cooperative bird**. *bioRxiv*. DOI: 10.1101/2021.11.11.468195
+Pablo Capilla-Lasheras, Alastair J. Wilson, Andrew J. Young. **Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care**. Available on [bioRxiv](https://www.biorxiv.org/content/10.1101/2021.11.11.468195v2) and on *LINK*.
 
 ------------------------------------------------------------------------
 
-For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla@gmail.com](mailto:pacapilla@gmail.com) and [Andrew Young](http://www.animalsocieties.org/), email: [A.J.Young@exeter.ac.uk](mailto:A.J.Young@exeter.ac.uk)
+For any further information, please contact: [Pablo Capilla-Lasheras](https://scholar.google.com/citations?hl=en&user=5JMTO-kAAAAJ&view_op=list_works&sortby=pubdate), email: [pacapilla\@gmail.com](mailto:pacapilla@gmail.com) and [Andrew Young](http://www.animalsocieties.org/), email: [A.J.Young\@exeter.ac.uk](mailto:A.J.Young@exeter.ac.uk)
 
 ------------------------------------------------------------------------
 
@@ -39,4 +39,3 @@ All R code is available in [`scripts`](https://github.com/PabloCapilla/egg_plast
 [`models`](https://github.com/PabloCapilla/egg_plasticity/tree/main/models): folder containing brms models for Supplementary Section I.
 
 [`renv`](https://github.com/PabloCapilla/egg_plasticity/tree/main/renv): R library/environment used to run this repository. More information in [`renv`](https://rstudio.github.io/renv/articles/renv.html).
-

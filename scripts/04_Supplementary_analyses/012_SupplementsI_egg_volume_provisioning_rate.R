@@ -2,11 +2,8 @@
 ###
 #' 
 #' Script for:
-#' Mothers front-load their investment to the egg stage when helped in a wild cooperative bird
+#' Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care
 #' Capilla-Lasheras et al. 
-#' Preprint: https://doi.org/10.1101/2021.11.11.468195
-#' 
-#' Latest update: 2023/07/08
 #' 
 ###
 ###
@@ -23,13 +20,9 @@ pacman::p_load(dplyr,
                data.table,
                ggplot2, 
                sjPlot,
-               extrafont,
                MCMCglmm,
                brms,
                lme4)
-loadfonts()
-# font_import() may be needed first to use font types in ggplot
-# check with 'fonts()' that font are available
 
 #####
 

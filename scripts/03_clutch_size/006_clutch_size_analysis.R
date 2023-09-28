@@ -2,11 +2,8 @@
 ###
 #' 
 #' Script for:
-#' Mothers front-load their investment to the egg stage when helped in a wild cooperative bird
+#' Mothers in a cooperatively breeding bird increase investment per offspring at the pre-natal stage when they will have more help with post-natal care
 #' Capilla-Lasheras et al. 
-#' Preprint: https://doi.org/10.1101/2021.11.11.468195
-#' 
-#' Latest update: 2023/08/03
 #' 
 ###
 ###
@@ -439,10 +436,10 @@ table_S9_clean <- table_S9_data %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black")
 
-# TABLE S8
+# TABLE
 table_S9_clean
 
-# save Table S8 (saved in html, then imported in docx to include in manuscript)
+# save Table (saved in html, then imported in docx to include in manuscript)
 table_S9_clean %>%
   gtsave(filename = "./tables/Table S9.html")
 
